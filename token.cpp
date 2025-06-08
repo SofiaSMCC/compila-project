@@ -51,6 +51,9 @@ std::ostream& operator << ( std::ostream& outs, const Token & tok )
         case Token::EQUAL: outs << "TOKEN(EQUAL)"; break;
         case Token::CD: outs << "TOKEN(CD)"; break;
         case Token::CI: outs << "TOKEN(CI)"; break;
+        case Token::LLD: outs << "TOKEN(LLD)"; break;
+        case Token::LLI: outs << "TOKEN(LLI"
+                                 ")"; break;
         case Token::COMA: outs << "TOKEN(COMA)"; break;
         case Token::BOOLEAN: outs << "TOKEN(BOOLEAN)"; break;
         default: outs << "TOKEN(UNKNOWN)"; break;

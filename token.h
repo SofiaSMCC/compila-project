@@ -10,6 +10,7 @@ public:
     enum Type {
         ID, COMA, ASSIGN, PC,
         PI, PD,
+        LLI, LLD,
         CI, CD,
         EQUAL, LT, DIFF, LET, GT, GET,
         FOR, WHILE, IF, ELSEIF, ELSE, DO, PRINTF, RETURN,
@@ -18,6 +19,7 @@ public:
         ERR, END
     };
 
+    // LLI, LLD - llave izquierda, llave derecha
     // CI, CD - corchete izquierdo, corchete derecho
     // EQUAL - ==
     // LT - <

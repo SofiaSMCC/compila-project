@@ -47,7 +47,7 @@ Token* Scanner::nextToken() {
         else if (word == "string") token = new Token(Token::STRING, word, 0, word.length());
         else token = new Token(Token::ID, word, 0, word.length());
 
-    } else if (strchr("+-*/(){}=;!,|&<>", c)) {
+    } else if (strchr("+-*/(){}=;!,|&<>[]", c)) {
 
         if (c == '&' && current + 1 < input.length() && input[current + 1] == '&') {
             token = new Token(Token::AND, "&&", 0, 2);
@@ -86,8 +86,10 @@ Token* Scanner::nextToken() {
 
             case '(': token = new Token(Token::PI, c); break;
             case ')': token = new Token(Token::PD, c); break;
-            case '{': token = new Token(Token::CI, c); break;
-            case '}': token = new Token(Token::CD, c); break;
+            case '[': token = new Token(Token::CI, c); break;
+            case ']': token = new Token(Token::CD, c); break;
+            case '{': token = new Token(Token::LLI, c); break;
+            case '}': token = new Token(Token::LLD, c); break;
 
             case '=':
                 if (current + 1 < input.length() && input[current + 1] == '=') {
