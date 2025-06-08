@@ -47,7 +47,7 @@ Token* Scanner::nextToken() {
         else if (word == "string") token = new Token(Token::STRING, word, 0, word.length());
         else token = new Token(Token::ID, word, 0, word.length());
 
-    } else if (strchr("+-*/(){}=;!,|&", c)) {
+    } else if (strchr("+-*/(){}=;!,|&<>", c)) {
 
         if (c == '&' && current + 1 < input.length() && input[current + 1] == '&') {
             token = new Token(Token::AND, "&&", 0, 2);
