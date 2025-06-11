@@ -1,45 +1,23 @@
-#ifndef COMPILA_PROJECT_TOKEN_H
-#define COMPILA_PROJECT_TOKEN_H
-
+#ifndef TOKEN_H
+#define TOKEN_H
 
 #include <string>
-using namespace std;
 
 class Token {
 public:
     enum Type {
-        ID, COMA, ASSIGN, PC,
-        PI, PD,
-        LLI, LLD,
-        CI, CD,
-        EQUAL, LT, DIFF, LET, GT, GET,
-        FOR, WHILE, IF, ELSEIF, ELSE, DO, PRINTF, RETURN,
-        AND, OR, PLUS, MINUS, MUL, DIV, NOT, DPLUS, DMINUS,
-        TRUE, FALSE, INT, STRING, NUM, BOOLEAN,
-        ERR, END
+        PLUS, MINUS, MUL, DIV, NUM, ERR, PD, PI, END, ID, PRINT, ASSIGN, PC,LT, LE, EQ, IF, THEN, ELSE, ENDIF,WHILE,DO,ENDWHILE,COMA,IFEXP, VAR, FOR, ENDFOR, TRUE, FALSE, IN, RANGE, NOT, AND, OR,CI,CD,STRING
     };
 
-    // LLI, LLD - llave izquierda, llave derecha
-    // CI, CD - corchete izquierdo, corchete derecho
-    // EQUAL - ==
-    // LT - <
-    // DIFF - !=
-    // LET - <=
-    // GT - >
-    // GET - >=
-    // DPLUS - "--"
-    // DMINUS - "++"
-    // NOT - !
-
     Type type;
-    string text;
+    std::string text;
 
     Token(Type type);
     Token(Type type, char c);
-    Token(Type type, const string& source, int first, int last);
+    Token(Type type, const std::string& source, int first, int last);
 
-    friend ostream& operator<<(ostream& outs, const Token& tok);
-    friend ostream& operator<<(ostream& outs, const Token* tok);
+    friend std::ostream& operator<<(std::ostream& outs, const Token& tok);
+    friend std::ostream& operator<<(std::ostream& outs, const Token* tok);
 };
 
-#endif //COMPILA_PROJECT_TOKEN_H
+#endif // TOKEN_H

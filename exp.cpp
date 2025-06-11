@@ -1,7 +1,7 @@
 #include <iostream>
 #include "exp.h"
 using namespace std;
-IFExp::IFExp(Exp* cond, Body* body_): condi(cond),body(body_){}
+IFExp::IFExp(Exp* cond,Exp* l, Exp* r): cond(cond),left(l),right(r){}
 BinaryExp::BinaryExp(Exp* l, Exp* r, BinaryOp op):left(l),right(r),op(op) {
     if (op == PLUS_OP || op == MINUS_OP || op == MUL_OP || op == DIV_OP) {
         type = "int";
@@ -9,18 +9,27 @@ BinaryExp::BinaryExp(Exp* l, Exp* r, BinaryOp op):left(l),right(r),op(op) {
         type = "bool";
     }
 }
+
 NumberExp::NumberExp(int v):value(v) {}
+
 BoolExp::BoolExp(bool v):value(v) {}
+
 IdentifierExp::IdentifierExp(const string& n):name(n) {}
-StringLiteral::StringLiteral(const string& value):value(value){}
-StringLiteral::~StringLiteral(){}
+
 Exp::~Exp() {}
+
 BinaryExp::~BinaryExp() { delete left; delete right; }
-IFExp::~IFExp() {delete condi, delete body; }
+
+IFExp::~IFExp() {delete cond, delete left; delete right; }
+
 NumberExp::~NumberExp() { }
+
 BoolExp::~BoolExp() { }
+
 IdentifierExp::~IdentifierExp() { }
+
 AssignStatement::AssignStatement(string id, Exp* e): id(id), rhs(e) {}
+
 AssignStatement::~AssignStatement() {
     delete rhs;
 }
@@ -29,45 +38,30 @@ PrintStatement::~PrintStatement() {
     delete e;
 }
 
-IfStatement::IfStatement(vector<IFExp*> sent): sent_if(sent){}
+IfStatement::IfStatement(Exp* c, Body* t, Body* e): condition(c), then(t), els(e) {}
 IfStatement::~IfStatement() {
-    for(auto s:sent_if)
-        delete s;
-
+    delete condition;
+    delete then;
+    delete els;
 }
 WhileStatement::WhileStatement(Exp* c, Body* t): condition(c), b(t) {}
 WhileStatement::~WhileStatement() {
     delete condition;
     delete b;
 }
+ForStatement::ForStatement(string id, Exp* s, Exp* e, Exp* st, Body* b): id(id), start(s), end(e), step(st), b(b) {}
+ForStatement::~ForStatement() {
+    delete start;
+    delete end;
+    delete step;
+    delete b;
+}
 
-ForStatement::ForStatement(string id, Exp* start, Exp* end, Exp* step, Body* b):id(id),start(start),condition(condition),step(step),b(b){}
-ForStatement::~ForStatement(){delete start; delete condition;delete step;delete b;}
+
 VarDec::VarDec(string type, list<string> ids): type(type), vars(ids) {}
-VarDec::~VarDec(){}
+VarDec::~VarDec() {}
 
-FunDec::FunDec(string nombre,string tipo,vector<string> parametros,vector<string> tipos,Body* cuerpo):nombre(nombre),tipo(tipo),parametros(parametros),tipos(tipos),cuerpo(cuerpo){}
-FunDec::~FunDec() {
-    delete cuerpo;
-}
-
-FCallExp::FCallExp(string nombre,vector<Exp*> argumentos):nombre(nombre),argumentos(argumentos){}
-FCallExp::~FCallExp() {
-    for(auto ar:argumentos)
-        delete ar;
-}
-
-FunDecList::FunDecList(list<FunDec*> Fundecs):Fundecs(Fundecs){}
-FunDecList::~FunDecList() {
-    for(auto fun:Fundecs)
-        delete fun;
-}
-ReturnStatement::ReturnStatement(Exp* e):e(e){}
-ReturnStatement::~ReturnStatement(){delete e;}
-
-
-
-VarDecList::VarDecList(list<VarDec*> vardecs): vardecs(vardecs) {}
+VarDecList::VarDecList(): vardecs() {}
 void VarDecList::add(VarDec* v) {
     vardecs.push_back(v);
 }
@@ -94,6 +88,11 @@ Body::~Body() {
 }
 
 
+Program::Program(Body* b): body(b) {}
+
+Program::~Program() {
+    delete body;
+}
 Stm::~Stm() {}
 string Exp::binopToChar(BinaryOp op) {
     string  c;
@@ -105,7 +104,12 @@ string Exp::binopToChar(BinaryOp op) {
         case LT_OP: c = "<"; break;
         case LE_OP: c = "<="; break;
         case EQ_OP: c = "=="; break;
+        case OR_OP: c = "or"; break;
+        case AND_OP: c = "and"; break;
+        case NOT_OP: c = "not"; break;
         default: c = "$";
     }
     return c;
 }
+StringLiteral::StringLiteral(const std::string &value):value(value) {}
+StringLiteral::~StringLiteral() {}
