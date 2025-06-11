@@ -41,12 +41,10 @@ int main(int argc, const char* argv[]) {
         cout << "Iniciando Visitor:" << endl;
         PrintVisitor printVisitor;
         EVALVisitor evalVisitor;
-        cout<<"hola";
-        auto a =evalVisitor.env.levels;
 
-        cout<<"a1";
         TypeVisitor typeVisitor;
         cout << "VERIFICANDO:" << endl;
+
         typeVisitor.check(program);
         cout << endl;
         cout << "IMPRIMIR:" << endl;
@@ -54,6 +52,7 @@ int main(int argc, const char* argv[]) {
         cout  << endl;
         cout << "EJECUTAR:" << endl;
         evalVisitor.ejecutar(program);
+
         delete program;
     } catch (const exception& e) {
         cout << "Error durante la ejecución: " << e.what() << endl;

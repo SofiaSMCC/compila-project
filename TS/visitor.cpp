@@ -25,7 +25,7 @@
     }
     int AssignStatement::accept(Visitor* visitor) {
         visitor->visit(this);
-        cout<<"  llego?   ";
+        //cout<<"  llego?   ";
         return 0;
     }
 
@@ -65,8 +65,8 @@
         visitor->visit(this);
         return 0;
     }
+
     ImpValue StringLiteral::accept(Visitor* visitor) {
-        visitor->visit(this);
         return visitor->visit(this);
     }
 
@@ -102,6 +102,7 @@
 
     void PrintVisitor::visit(AssignStatement* stm) {
         cout << stm->id << " = ";
+
         stm->rhs->accept(this);
         cout << ";";
     }
@@ -192,8 +193,8 @@
 
     ImpValue PrintVisitor::visit(StringLiteral *stm) {
 
-        cout<<stm->value;
-        return stm->accept(this);
+        cout << stm->value;
+        return ImpValue("string", 0, false, stm->value);
     }
 
 
@@ -268,18 +269,19 @@
     }
 
     ImpValue EVALVisitor::visit(IdentifierExp* exp) {
-        string t= env.lookup_type(exp->name);
-        if (t!="bool") {
-            int v= env.lookup(exp->name).first;
-            return ImpValue(t,v,false,"");
-        }
-        else if(t=="bool") {
-            bool v=env.lookup(exp->name).first;
-            return ImpValue(t,0,v,"");
-        }
-        else if(t=="string") {
-            string s=env.lookup(exp->name).second;
+        string t = env.lookup_type(exp->name);
 
+        if (t == "int") {
+            int v = env.lookup(exp->name).first;
+            return ImpValue(t, v, false, "");
+        }
+        else if (t == "bool") {
+            bool v = env.lookup(exp->name).first;
+            return ImpValue(t, 0, v, "");
+        }
+        else if (t == "string") {
+            string s = env.lookup(exp->name).second;
+            return ImpValue(t, 0, false, s);
         }
         return ImpValue();
     }
@@ -287,7 +289,7 @@
     void EVALVisitor::visit(AssignStatement* stm) {
         string t =env.lookup_type(stm->id); //tipo
         ImpValue val = stm->rhs->accept(this);
-        cout<<"no llega :(";
+
         if(t=="bool") {
             env.update(stm->id, val.bool_value);
         }
@@ -317,20 +319,27 @@
     void EVALVisitor::ejecutar(Program* program){
         env.add_level();
         program->body->accept(this);
+        cout << "\nEstado del environment antes de limpiar:" << endl;
+        env.debug_print();
         env.remove_level();
     }
 
     void EVALVisitor::visit(IfStatement* stm) {
+
+        ImpValue cond = stm->condition->accept(this);
         env.add_level();
-        if(stm->condition->accept(this).int_value==1 or  stm->condition->accept(this).bool_value==1  ) {
-            for (Stm* s : stm->then->slist->stms) {
-                s->accept(this);
-            }
+
+        bool condition_true = false;
+        if (cond.type == "bool") {
+            condition_true = cond.bool_value;
+        } else if (cond.type == "int") {
+            condition_true = (cond.int_value != 0);
         }
-        else {
-            for (Stm* s : stm->els->slist->stms) {
-                s->accept(this);
-            }
+
+        if (condition_true) {
+            stm->then->accept(this);
+        } else if (stm->els) {
+            stm->els->accept(this);
         }
         env.remove_level();
     }
@@ -346,7 +355,7 @@
                 stm->b->accept(this);
             }
         }
-        env.add_level();
+        env.remove_level();
     }
 
 
@@ -396,14 +405,15 @@
     }
 
     void EVALVisitor::visit(Body* b){
-        env.add_level();
+        //env.add_level();
         b->vardecs->accept(this);
         b->slist->accept(this);
-        env.remove_level();
+        //env.remove_level();
     }
 
     ImpValue EVALVisitor::visit(StringLiteral *stm) {
-        return stm->accept(this);
+
+        return ImpValue("string", 0, false, stm->value);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////
@@ -414,8 +424,10 @@
 
     void TypeVisitor::check(Program* program){
         env.add_level();
+
         program->body->accept(this);
         env.remove_level();
+
     }
 
     ImpValue TypeVisitor::visit(BinaryExp* exp) {
@@ -503,34 +515,17 @@
     }
 
     void TypeVisitor::visit(AssignStatement* stm) {
-        string tipo_varibale = env.lookup_type(stm->id);
-        if (stm->rhs->accept(this).int_value==1) {
-            if (tipo_varibale=="int") {
-                cout << "exitoso"<<endl;
-            }
-            else {
-                cout << "Error en variable"<<endl;
-                exit(0);
-            }
+
+        string tipo_variable = env.lookup_type(stm->id);
+        ImpValue rhs_value = stm->rhs->accept(this);
+
+        // CORREGIDO: Verificar que los tipos coincidan
+        if (rhs_value.type != tipo_variable) {
+            cout << "Error de tipos: se esperaba " << tipo_variable
+                 << " pero se encontró " << rhs_value.type << endl;
+            exit(0);
         }
-        if (stm->rhs->accept(this).bool_value==1) {
-            if (tipo_varibale=="int") {
-                cout << "Error en variable"<<endl;
-                exit(0);
-            }
-            else {
-                cout << "exito"<<endl;
-            }
-        }
-        if (stm->rhs->accept(this).string_value!="") {
-            if (tipo_varibale=="int" or tipo_varibale=="bool") {
-                cout << "Error en variable"<<endl;
-                exit(0);
-            }
-            else {
-                cout << "exito"<<endl;
-            }
-        }
+        cout << "Asignación exitosa" << endl;
     }
 
     void TypeVisitor::visit(PrintStatement* stm) {
@@ -574,33 +569,44 @@
 
     void TypeVisitor::visit(VarDec* stm) {
         string t = stm->type;
+
         if (t != "bool" && t != "int" && t!="string") {
             cout << "type error" << endl;
             exit(0);
         }
         for(auto i: stm->vars){
             env.add_var(i, stm->type);
-            cout<<"sin valor";
+
         }
     }
 
     void TypeVisitor::visit(VarDecList* stm) {
         for(auto i: stm->vardecs){
+
             i->accept(this);
+
         }
+
     }
 
     void TypeVisitor::visit(StatementList* stm) {
         for(auto i: stm->stms){
+
             i->accept(this);
         }
+
     }
 
     void TypeVisitor::visit(Body* b) {
+
         b->vardecs->accept(this);
+
         b->slist->accept(this);
+
     }
 
     ImpValue TypeVisitor::visit(StringLiteral *stm) {
-        return stm->accept(this);
+
+        return ImpValue("string",0,false," ");
+
     }

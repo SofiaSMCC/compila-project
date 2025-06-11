@@ -55,13 +55,17 @@ VarDec* Parser::parseVarDec() {
             cout << "Error: se esperaba un identificador después de 'var'." << endl;
             exit(1);
         }
+
         string type = previous->text;
         list<string> ids;
+        //cout<<"IDs: ";
+
         if (!match(Token::ID)) {
             cout << "Error: se esperaba un identificador después de 'var'." << endl;
             exit(1);
         }
         ids.push_back(previous->text);
+        //cout<<previous->text<<"\t";
         while (match(Token::COMA)) {
             if (!match(Token::ID)) {
                 cout << "Error: se esperaba un identificador después de ','." << endl;
@@ -329,9 +333,6 @@ Exp* Parser::parseFactor() {
         return e;
     }
     else if (match(Token::STRING)){
-         cout<<"si llega";
-
-
 
         return new StringLiteral(previous->text);
 
