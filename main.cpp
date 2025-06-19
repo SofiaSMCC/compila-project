@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include "scanner.h"
+#include "parser.h"
 
 using namespace std;
 
@@ -32,5 +33,16 @@ int main(int argc, const char* argv[]) {
     cout << "Scanner exitoso" << endl;
     cout << endl;
 
+    cout << "Iniciando parsing:" << endl;
+    Parser parser(&scanner);
+
+    try {
+        Program* program = parser.ParseProgram();
+        cout << "Parsing exitoso" << endl << endl;
+        delete program;
+    } catch (const exception& e) {
+        cout << "Error durante la ejecución: " << e.what() << endl;
+        return 1;
+    }
     return 0;
 }
