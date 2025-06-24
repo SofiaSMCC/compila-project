@@ -164,9 +164,9 @@ VarDec* Parser::ParseVarDec() {
         cout << "Error: se esperaba un tipo al comienzo de la declaración." << endl;
         exit(1);
     }
-    type = previous->text;
-    advance();
 
+    advance();
+    type = previous->text;
     list<Var*> vars;
     vars.push_back(ParseVar());
 
@@ -230,6 +230,7 @@ Var* Parser::ParseVar() {
 }
 
 Program* Parser::ParseProgram() {
+
     VarDecList* vdl = ParseVarDecList();
     FunDecList* fdl = ParseFunDecList();
     return new Program(vdl, fdl);
