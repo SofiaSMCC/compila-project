@@ -87,7 +87,7 @@ FunDec* Parser::ParseFunDec() {
         cout << "Error: se esperaba un tipo al comienzo de la declaración." << endl;
         exit(1);
     }
-    type = previous->text;
+    type = current->text;
     advance();
 
     if (!match(Token::ID)) {
@@ -150,7 +150,7 @@ FunDec* Parser::ParseFunDec() {
 // Var
 
 VarDecList* Parser::ParseVarDecList() {
-    VarDecList* vdl;
+    VarDecList* vdl = new VarDecList();
     while (check(Token::INT) || check(Token::STRING) || check(Token::BOOLEAN)) {
         VarDec* vd = ParseVarDec();
         vdl->add(vd);
@@ -164,9 +164,9 @@ VarDec* Parser::ParseVarDec() {
         cout << "Error: se esperaba un tipo al comienzo de la declaración." << endl;
         exit(1);
     }
-
+    type = current->text;
     advance();
-    type = previous->text;
+
     list<Var*> vars;
     vars.push_back(ParseVar());
 
@@ -230,7 +230,6 @@ Var* Parser::ParseVar() {
 }
 
 Program* Parser::ParseProgram() {
-
     VarDecList* vdl = ParseVarDecList();
     FunDecList* fdl = ParseFunDecList();
     return new Program(vdl, fdl);

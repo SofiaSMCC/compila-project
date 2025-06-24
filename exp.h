@@ -229,7 +229,7 @@ class VarDecList{
 public:
     list<VarDec*> vardecs;
     VarDecList(list<VarDec*> vardecs);
-    VarDecList();
+    VarDecList(){};
     void add(VarDec* vardec);
     //int accept(Visitor* visitor);
     ~VarDecList();
