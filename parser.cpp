@@ -230,7 +230,8 @@ Var* Parser::ParseVar() {
 }
 
 Program* Parser::ParseProgram() {
-    VarDecList* vdl = ParseVarDecList();
+    //VarDecList* vdl = ParseVarDecList();
+    VarDecList* vdl = nullptr;
     FunDecList* fdl = ParseFunDecList();
     return new Program(vdl, fdl);
 }
@@ -240,7 +241,8 @@ Program* Parser::ParseProgram() {
 StatementList* Parser::ParseStatementList() {
     StatementList* sl = new StatementList();
     sl->add(ParseStatement());
-    while (match(Token::PC)) {
+    // No debe llegar al final o llave derech que cierra la función
+    while (!check(Token::LLD) && !isAtEnd()) {
         sl->add(ParseStatement());
     }
     return sl;
@@ -295,7 +297,7 @@ Stm* Parser::ParseStatement(){
         }
         e = parseAExp();
         if (!match(Token::PD)) {
-            cout << "Error: se esperaba un '(' después de la expresión." << endl;
+            cout << "Error: se esperaba un ')' después de la expresión." << endl;
             exit(1);
         }
         if (!match(Token::PC)) {
