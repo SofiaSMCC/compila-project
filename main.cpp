@@ -3,6 +3,7 @@
 #include <string>
 #include "scanner.h"
 #include "parser.h"
+#include "visitor.h"
 
 using namespace std;
 
@@ -39,6 +40,9 @@ int main(int argc, const char* argv[]) {
     try {
         Program* program = parser.ParseProgram();
         cout << "Parsing exitoso" << endl << endl;
+        PrintVisitor printer;
+        printer.imprimir(program);
+
         delete program;
     } catch (const exception& e) {
         cout << "Error durante la ejecución: " << e.what() << endl;

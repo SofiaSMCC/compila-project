@@ -3,32 +3,20 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include "imp_value.h"
+#include "visitor.h"
 #include <list>
 using namespace std;
 
-enum BinaryOp { PLUS_OP, MINUS_OP, MUL_OP, DIV_OP, LT_OP, LET_OP, GT_OP, GET_OP, EQ_OP, AND_OP, OR_OP, NOT_OP, DIFF_OP, INC_OP, DEC_OP};
+enum BinaryOp { PLUS_OP, MINUS_OP, MUL_OP, DIV_OP,
+                LT_OP, LET_OP, GT_OP, GET_OP, EQ_OP, AND_OP, OR_OP, NOT_OP, DIFF_OP,
+                INC_OP, DEC_OP};
 
 class Body;
 
-class ImpValue {
-public:
-    ImpValue(string tipo,int valor, bool bol, string str_valor){
-        type = tipo;
-        int_value = valor;
-        bool_value = bol;
-        string_value = str_valor;
-    };
-    ImpValue(){};
-    ~ImpValue(){};
-    string type;
-    int int_value;
-    bool bool_value;
-    string string_value;
-};
-
 class Exp {
 public:
-    //virtual ImpValue accept(Visitor* visitor) = 0;
+    virtual ImpValue accept(Visitor* visitor) = 0;
     virtual ~Exp() = 0;
     static string binopToChar(BinaryOp op);
 };
@@ -39,7 +27,7 @@ public:
     string type;
     BinaryOp op;
     BinaryExp(Exp* l, Exp* r, BinaryOp op);
-    //ImpValue accept(Visitor* visitor);
+    ImpValue accept(Visitor* visitor);
     ~BinaryExp();
 };
 
@@ -47,7 +35,7 @@ class NumberExp : public Exp {
 public:
     int value;
     NumberExp(int v);
-    //ImpValue accept(Visitor* visitor);
+    ImpValue accept(Visitor* visitor);
     ~NumberExp();
 };
 
@@ -55,7 +43,7 @@ class BoolExp : public Exp {
 public:
     int value;
     BoolExp(bool v);
-    //ImpValue accept(Visitor* visitor);
+    ImpValue accept(Visitor* visitor);
     ~BoolExp();
 };
 
@@ -63,7 +51,7 @@ class StringLiteral : public Exp {
 public:
     string value;
     StringLiteral(const string& value);
-    //ImpValue accept(Visitor* visitor);
+    ImpValue accept(Visitor* visitor);
     //string acceptString(Visitor* visitor);
     ~StringLiteral();
 };
@@ -72,7 +60,7 @@ class IdentifierExp : public Exp {
 public:
     string name;
     IdentifierExp(const string& n);
-    //ImpValue accept(Visitor* visitor);
+    ImpValue accept(Visitor* visitor);
     ~IdentifierExp();
 };
 
@@ -82,7 +70,7 @@ public:
     vector<Exp*> indices;
     LValue(const string& id, vector<Exp*> indices);
     ~LValue();
-    //ImpValue accept(Visitor* visitor) override;
+    ImpValue accept(Visitor* visitor) override;
 };
 
 class ArrayAccessExp : public Exp {
@@ -90,12 +78,13 @@ public:
     string arrayName;
     vector<Exp*> indices;
     ArrayAccessExp(const string& name, const vector<Exp*>& idx);
+    ImpValue accept(Visitor* visitor) override;
     ~ArrayAccessExp() override {}
 };
 
 class Stm {
 public:
-    //virtual int accept(Visitor* visitor) = 0;
+    virtual int accept(Visitor* visitor) = 0;
     virtual ~Stm() = 0;
 };
 
@@ -104,7 +93,7 @@ public:
     LValue* lvalue;
     Exp* rhs;
     AssignStatement(LValue* lvalue, Exp* e);
-    //int accept(Visitor* visitor);
+    int accept(Visitor* visitor);
     ~AssignStatement();
 };
 
@@ -115,6 +104,8 @@ public:
     vector<InitValue*> list;
     InitValue(Exp* val);
     InitValue(vector<InitValue*> list);
+    virtual int accept(Visitor* visitor);
+    ~InitValue();
 };
 
 
@@ -123,7 +114,7 @@ public:
     string format;
     Exp* e;
     PrintStatement(string format, Exp* e);
-    //int accept(Visitor* visitor);
+    int accept(Visitor* visitor);
     ~PrintStatement();
 };
 
@@ -132,7 +123,7 @@ public:
     Exp *condi;
     Body* body;
     IFExp(Exp *cond, Body* body_);
-    //ImpValue accept(Visitor* visitor);
+    ImpValue accept(Visitor* visitor);
     ~IFExp();
 };
 
@@ -140,7 +131,7 @@ class IfStatement : public Stm {
 public:
     vector<IFExp*> sent_if;
     IfStatement(vector<IFExp*> sent);
-    //int accept(Visitor* visitor);
+    int accept(Visitor* visitor);
     ~IfStatement();
 };
 
@@ -149,7 +140,7 @@ public:
     Exp* condition;
     Body* b;
     WhileStatement(Exp* condition, Body* b);
-    //int accept(Visitor* visitor);
+    int accept(Visitor* visitor);
     ~WhileStatement();
 };
 
@@ -158,7 +149,7 @@ public:
     Exp* condition;
     Body* b;
     DoWhileStatement(Exp* condition, Body* b);
-    //int accept(Visitor* visitor);
+    int accept(Visitor* visitor);
     ~DoWhileStatement();
 };
 
@@ -169,8 +160,8 @@ public:
     Exp* condition;
     Exp* step;
     Body* b;
-    ForStatement(string id, Exp* start, Exp* end, Exp* step, Body* b);
-    //int accept(Visitor* visitor);
+    ForStatement(string id, Exp* start, Exp* condition, Exp* step, Body* b);
+    int accept(Visitor* visitor);
     ~ForStatement();
 };
 
@@ -184,7 +175,7 @@ public:
     Body* cuerpo;
     FunDec(string nombre,string tipo,vector<string> parametros,vector<string> tipos,Body* cuerpo);
     ~FunDec();
-    //int accept(Visitor* visitor);
+    int accept(Visitor* visitor);
 };
 
 class FCallExp : public Exp {
@@ -193,14 +184,22 @@ public:
     vector<Exp*> argumentos;
     FCallExp(string nombre, vector<Exp*> argumentos);
     ~FCallExp();
-    //ImpValue accept(Visitor* visitor);
+    ImpValue accept(Visitor* visitor);
+};
+
+class FCallStatement : public Stm {
+public:
+    FCallExp* call;
+    FCallStatement(FCallExp* call) : call(call) {}
+    int accept(Visitor* visitor);
+    ~FCallStatement() { delete call; }
 };
 
 class FunDecList{
 public:
     list<FunDec*> Fundecs;
     void add(FunDec* fundec);
-    //int accept(Visitor* visitor);
+    int accept(Visitor* visitor);
     FunDecList();
     FunDecList(list<FunDec*> Fundecs);
     ~FunDecList();
@@ -211,7 +210,7 @@ public:
     Exp* e;
     ReturnStatement(Exp* e);
     ~ReturnStatement();
-    //int accept(Visitor* visitor);
+    int accept(Visitor* visitor);
 };
 
 class Var {
@@ -220,7 +219,7 @@ public:
     list<NumberExp*> dimList;
     InitValue* iv;
     Var(string id, list<NumberExp*> dimList, InitValue* iv);
-    //int accept(Visitor* visitor);
+    int accept(Visitor* visitor);
     ~Var();
 };
 
@@ -229,7 +228,7 @@ public:
     string type;
     list<Var*> vars;
     VarDec(string type, list<Var*> vars);
-    //int accept(Visitor* visitor);
+    int accept(Visitor* visitor);
     ~VarDec();
 };
 
@@ -239,7 +238,7 @@ public:
     VarDecList(list<VarDec*> vardecs);
     VarDecList(){};
     void add(VarDec* vardec);
-    //int accept(Visitor* visitor);
+    int accept(Visitor* visitor);
     ~VarDecList();
 };
 
@@ -248,7 +247,7 @@ public:
     list<Stm*> stms;
     StatementList();
     void add(Stm* stm);
-    //int accept(Visitor* visitor);
+    int accept(Visitor* visitor);
     ~StatementList();
 };
 
@@ -257,7 +256,7 @@ public:
     VarDecList* vardecs;
     StatementList* slist;
     Body(VarDecList* vardecs, StatementList* stms);
-    //int accept(Visitor* visitor);
+    int accept(Visitor* visitor);
     ~Body();
 };
 

@@ -58,16 +58,21 @@ Parser::Parser(Scanner* sc):scanner(sc) {
 }
 
 Body* Parser::ParseBody() {
-    VarDecList* vdl = new VarDecList();
-    StatementList* smtl = new StatementList();
+    VarDecList* vdl = nullptr;
+    StatementList* smtl = nullptr;
+    bool hasVars = false, hasStms = false;
 
     while (!check(Token::LLD) && !isAtEnd()) {
         if (check(Token::INT) || check(Token::STRING) || check(Token::BOOLEAN)) {
+            if (!vdl) vdl = new VarDecList();
             VarDec* vd = ParseVarDec();
             vdl->add(vd);
+            hasVars = true;
         } else {
+            if (!smtl) smtl = new StatementList();
             Stm* s = ParseStatement();
             smtl->add(s);
+            hasStms = true;
         }
     }
 
@@ -266,28 +271,48 @@ Stm* Parser::ParseStatement(){
     }
     if (match(Token::ID)) {
         string id = previous->text;
-        vector<Exp*> indices;
-        while(match(Token::CI)) {
-            Exp* indexExp = parseAExp();
-            if(!match(Token::CD)) {
-                cout << "Error: se esperaba un ']' después de la expresión de índice." << endl;
+
+        if (check(Token::PI)) {
+            advance();
+            vector<Exp*> args;
+            if (!check(Token::PD)) {
+                args.push_back(parseAExp());
+                while (match(Token::COMA)) {
+                    args.push_back(parseAExp());
+                }
+            }
+            if (!match(Token::PD)) {
+                cout << "Error: se esperaba ')' al final de los argumentos de la función." << endl;
                 exit(1);
             }
-            indices.push_back(indexExp);
+            if (!match(Token::PC)) {
+                cout << "Error: se esperaba ';' al final de la llamada a función." << endl;
+                exit(1);
+            }
+            s = new FCallStatement(new FCallExp(id, args));
         }
-        if (!match(Token::ASSIGN)) {
-            cout << "Error: se esperaba '=' después de LValue." << endl;
-            exit(1);
+        else {
+            vector<Exp*> indices;
+            while(match(Token::CI)) {
+                Exp* indexExp = parseAExp();
+                if(!match(Token::CD)) {
+                    cout << "Error: se esperaba un ']' después de la expresión de índice." << endl;
+                    exit(1);
+                }
+                indices.push_back(indexExp);
+            }
+            if (!match(Token::ASSIGN)) {
+                cout << "Error: se esperaba '=' después de LValue." << endl;
+                exit(1);
+            }
+            Exp* rhs = parseAExp();
+            if (!match(Token::PC)) {
+                cout << "Error: se esperaba ';' al final de la asignación." << endl;
+                exit(1);
+            }
+            LValue* lv = new LValue(id, indices);
+            s = new AssignStatement(lv, rhs);
         }
-
-        Exp* rhs = parseAExp();
-
-        if (!match(Token::PC)) {
-            cout << "Error: se esperaba ';' al final de la asignación." << endl;
-            exit(1);
-        }
-        LValue* lv = new LValue(id, indices);
-        s = new AssignStatement(lv, rhs);
     }
     else if (match(Token::PRINTF)) {
         if (!match(Token::PI)) {

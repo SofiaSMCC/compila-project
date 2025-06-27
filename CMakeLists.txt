@@ -10,4 +10,6 @@ add_executable(Compila_Project
         scanner.cpp
         main.cpp
         exp.cpp
-        parser.cpp)
+        parser.cpp
+        visitor.cpp
+        imp_value.cpp)

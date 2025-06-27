@@ -32,13 +32,24 @@ Token* Scanner::nextToken() {
             current++;
         string word = input.substr(first, current - first);
 
+        if (word == "else") {
+            size_t temp = current;
+            while (temp < input.length() && isspace(input[temp])) temp++;
+            if (temp + 1 < input.length() &&
+                input[temp] == 'i' && input[temp + 1] == 'f' &&
+                (temp + 2 == input.length() || !isalnum(input[temp + 2]))) {
+                token = new Token(Token::ELSEIF, "elseif", 0, 6);
+                current = temp + 2;
+                return token;
+            }
+        }
+
         if (word == "for") token = new Token(Token::FOR, word, 0, word.length());
         else if (word == "if") token = new Token(Token::IF, word, 0, word.length());
-        else if (word == "elseif") token = new Token(Token::ELSEIF, word, 0, word.length());
-        else if (word == "else") token = new Token(Token::ELSE, word, 0, word.length());
         else if (word == "while") token = new Token(Token::WHILE, word, 0, word.length());
         else if (word == "do") token = new Token(Token::DO, word, 0, word.length());
         else if (word == "printf") token = new Token(Token::PRINTF, word, 0, word.length());
+        else if (word == "else") token = new Token(Token::ELSE, word, 0, word.length());
         else if (word == "return") token = new Token(Token::RETURN, word, 0, word.length());
         else if (word == "true") token = new Token(Token::TRUE, word, 0, word.length());
         else if (word == "false") token = new Token(Token::FALSE, word, 0, word.length());

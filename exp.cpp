@@ -41,7 +41,7 @@ WhileStatement::~WhileStatement() {
     delete b;
 }
 
-ForStatement::ForStatement(string id, Exp* start, Exp* end, Exp* step, Body* b):id(id),start(start),condition(condition),step(step),b(b){}
+ForStatement::ForStatement(string id, Exp* start, Exp* condition, Exp* step, Body* b):id(id),start(start),condition(condition),step(step),b(b){}
 ForStatement::~ForStatement(){delete start; delete condition;delete step;delete b;}
 VarDec::VarDec(string type, list<Var*> vars): type(type), vars(vars) {}
 VarDec::~VarDec(){}
@@ -112,6 +112,13 @@ void StatementList::add(Stm* s) {
 }
 StatementList::~StatementList() {
     for (auto s: stms) {
+        delete s;
+    }
+}
+
+InitValue::~InitValue() {
+    delete value;
+    for (auto s: list) {
         delete s;
     }
 }
