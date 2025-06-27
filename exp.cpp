@@ -103,6 +103,9 @@ VarDecList::~VarDecList() {
     }
 }
 
+ArrayAccessExp::ArrayAccessExp(const string& name, const vector<Exp*>& idx) : arrayName(name), indices(idx) {}
+
+
 StatementList::StatementList(): stms() {}
 void StatementList::add(Stm* s) {
     stms.push_back(s);

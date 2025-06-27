@@ -1,11 +1,30 @@
-#include<stdio.h>
+#include <stdio.h>
+int main() {
+    int nums[3] = {-1, 2, 3};
+    for (int i = 0; i < 3; i++) {
+        printf("%d\n", nums[i]);
+    }
 
-int main(){
-  int x;
-  int y;
-  x = 1;
-  y = 10;
-  printf(" %d\n", x);
-  printf(" %d\n", y);
-  return 0;
+    int x = nums[2];
+
+    int mat[2][2] = {{1, 2}, {3, 4}};
+    printf("%d\n", mat[1][0]);
+
+    string palabras[2] = {"hola", "mundo"};
+    printf("%s\n", palabras[1]);
+
+    string nombres[3] = {"Ana", "Luis", "Sofia"};
+    for (int i = 0; i < 3; i++) {
+        printf("%s\n", nombres[i]);
+    }
+
+    bool flags[2] = {true, false};
+    if (flags[0]) {
+        printf("%s\n", "Bandera activa\n");
+    }
+
+    string saludo = "adios";
+    printf("%s\n", saludo);
+
+    return 0;
 }

@@ -58,8 +58,19 @@ Parser::Parser(Scanner* sc):scanner(sc) {
 }
 
 Body* Parser::ParseBody() {
-    VarDecList* vdl = ParseVarDecList();
-    StatementList* smtl = ParseStatementList();
+    VarDecList* vdl = new VarDecList();
+    StatementList* smtl = new StatementList();
+
+    while (!check(Token::LLD) && !isAtEnd()) {
+        if (check(Token::INT) || check(Token::STRING) || check(Token::BOOLEAN)) {
+            VarDec* vd = ParseVarDec();
+            vdl->add(vd);
+        } else {
+            Stm* s = ParseStatement();
+            smtl->add(s);
+        }
+    }
+
     return new Body(vdl, smtl);
 }
 
@@ -134,15 +145,12 @@ FunDec* Parser::ParseFunDec() {
         exit(1);
     }
 
-    VarDecList* varDecs = ParseVarDecList();
-    StatementList* stmts = ParseStatementList();
+    Body* b = ParseBody();
 
     if (!match(Token::LLD)) {
         cout << "Error: se esperaba '}' al final del cuerpo de la función." << endl;
         exit(1);
     }
-
-    Body* b = new Body(varDecs, stmts);
 
     return new FunDec(id, type, parametros, tipos, b);
 }
@@ -317,12 +325,12 @@ Stm* Parser::ParseStatement(){
             cout << "Error: se esperaba un ')' después de la expresión." << endl;
             exit(1);
         }
-        if (!match(Token::CI)) {
+        if (!match(Token::LLI)) {
             cout << "Error: se esperaba un '{' después del paréntesis izquierdo." << endl;
             exit(1);
         }
         Body* b = ParseBody();
-        if (!match(Token::CD)) {
+        if (!match(Token::LLD)) {
             cout << "Error: se esperaba un '}' después del paréntesis derecho." << endl;
             exit(1);
         }
@@ -373,8 +381,13 @@ Stm* Parser::ParseStatement(){
             cout << "Error: se esperaba un '(' después del while." << endl;
             exit(1);
         }
+        if (!checkTypeToken()) {
+            cout << "Error: se esperaba declaración de variable en la inicialización del for (por ejemplo: int i = 0)." << endl;
+            exit(1);
+        }
+        advance();
         if (!match(Token::ID)) {
-            cout << "Error: se esperaba un ')' después de la expresión." << endl;
+            cout << "Error: se esperaba un id después de la expresión." << endl;
             exit(1);
         }
         string id = previous->text;
@@ -581,6 +594,21 @@ Exp* Parser::parseFactor() {
             }
             return new FCallExp(id, args);
         }
+
+        vector<Exp*> indices;
+        while (match(Token::CI)) {
+            Exp* indexExp = parseAExp();
+            if (!match(Token::CD)) {
+                cout << "Error: se esperaba un ']' después de la expresión de índice." << endl;
+                exit(1);
+            }
+            indices.push_back(indexExp);
+        }
+
+        if (!indices.empty()) {
+            return new ArrayAccessExp(id, indices);
+        }
+
         return new IdentifierExp(id);
     }
     else if (match(Token::STRING)){

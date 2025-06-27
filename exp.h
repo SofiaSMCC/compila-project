@@ -85,6 +85,14 @@ public:
     //ImpValue accept(Visitor* visitor) override;
 };
 
+class ArrayAccessExp : public Exp {
+public:
+    string arrayName;
+    vector<Exp*> indices;
+    ArrayAccessExp(const string& name, const vector<Exp*>& idx);
+    ~ArrayAccessExp() override {}
+};
+
 class Stm {
 public:
     //virtual int accept(Visitor* visitor) = 0;
