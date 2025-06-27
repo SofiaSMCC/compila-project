@@ -20,11 +20,11 @@ IFExp::~IFExp() {delete condi, delete body; }
 NumberExp::~NumberExp() { }
 BoolExp::~BoolExp() { }
 IdentifierExp::~IdentifierExp() { }
-AssignStatement::AssignStatement(string id, Exp* e): id(id), rhs(e) {}
+AssignStatement::AssignStatement(LValue* lValue, Exp* e): lvalue(lValue), rhs(e) {}
 AssignStatement::~AssignStatement() {
     delete rhs;
 }
-PrintStatement::PrintStatement(Exp* e): e(e) {}
+PrintStatement::PrintStatement(string format, Exp* e): format(format), e(e) {}
 PrintStatement::~PrintStatement() {
     delete e;
 }
@@ -43,13 +43,14 @@ WhileStatement::~WhileStatement() {
 
 ForStatement::ForStatement(string id, Exp* start, Exp* end, Exp* step, Body* b):id(id),start(start),condition(condition),step(step),b(b){}
 ForStatement::~ForStatement(){delete start; delete condition;delete step;delete b;}
-VarDec::VarDec(string type, list<string> ids): type(type), vars(ids) {}
+VarDec::VarDec(string type, list<Var*> vars): type(type), vars(vars) {}
 VarDec::~VarDec(){}
 
 FunDec::FunDec(string nombre,string tipo,vector<string> parametros,vector<string> tipos,Body* cuerpo):nombre(nombre),tipo(tipo),parametros(parametros),tipos(tipos),cuerpo(cuerpo){}
 FunDec::~FunDec() {
     delete cuerpo;
 }
+
 
 FCallExp::FCallExp(string nombre,vector<Exp*> argumentos):nombre(nombre),argumentos(argumentos){}
 FCallExp::~FCallExp() {
@@ -62,10 +63,35 @@ FunDecList::~FunDecList() {
     for(auto fun:Fundecs)
         delete fun;
 }
+
+void FunDecList::add(FunDec *fundec) {
+    Fundecs.push_back(fundec);
+}
+
 ReturnStatement::ReturnStatement(Exp* e):e(e){}
 ReturnStatement::~ReturnStatement(){delete e;}
 
+InitValue::InitValue(Exp* val) {
+    isList = false;
+    value = val;
+}
 
+InitValue::InitValue(vector<InitValue*> list_) {
+    isList = true;
+    list = list_;
+    value = nullptr;
+}
+
+LValue::LValue(const string& id, vector<Exp*> indices): id(id), indices(indices) {}
+LValue::~LValue() {
+    for (auto e : indices) delete e;
+}
+
+DoWhileStatement::DoWhileStatement(Exp* condition, Body* b): condition(condition), b(b) {}
+DoWhileStatement::~DoWhileStatement() {
+    delete condition;
+    delete b;
+}
 
 VarDecList::VarDecList(list<VarDec*> vardecs): vardecs(vardecs) {}
 void VarDecList::add(VarDec* v) {
@@ -76,6 +102,9 @@ VarDecList::~VarDecList() {
         delete v;
     }
 }
+
+ArrayAccessExp::ArrayAccessExp(const string& name, const vector<Exp*>& idx) : arrayName(name), indices(idx) {}
+
 
 StatementList::StatementList(): stms() {}
 void StatementList::add(Stm* s) {
@@ -93,6 +122,19 @@ Body::~Body() {
     delete slist;
 }
 
+Var::Var(string id, list<NumberExp *> dimList, InitValue *iv): id(id), dimList(dimList), iv(iv){}
+Var::~Var() {
+    for (auto s: dimList) {
+        delete s;
+    }
+    delete iv;
+}
+
+Program::Program(VarDecList* vdl, FunDecList *func): vdl(vdl), func(func) {}
+Program::~Program(){
+    delete vdl;
+    delete func;
+}
 
 Stm::~Stm() {}
 string Exp::binopToChar(BinaryOp op) {
@@ -103,8 +145,16 @@ string Exp::binopToChar(BinaryOp op) {
         case MUL_OP: c = "*"; break;
         case DIV_OP: c = "/"; break;
         case LT_OP: c = "<"; break;
-        case LE_OP: c = "<="; break;
+        case LET_OP: c = "<="; break;
+        case GT_OP: c = ">"; break;
+        case GET_OP: c = ">="; break;
+        case AND_OP: c = "&&"; break;
+        case OR_OP: c = "||"; break;
+        case NOT_OP: c = "!"; break;
+        case DIFF_OP: c = "!="; break;
         case EQ_OP: c = "=="; break;
+        case INC_OP: c = "++"; break;
+        case DEC_OP: c = "--"; break;
         default: c = "$";
     }
     return c;

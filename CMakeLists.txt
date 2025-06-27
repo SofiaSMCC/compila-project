@@ -9,4 +9,5 @@ add_executable(Compila_Project
         token.cpp
         scanner.cpp
         main.cpp
-        exp.cpp)
+        exp.cpp
+        parser.cpp)
