@@ -143,6 +143,7 @@ public:
         }
         return true;
     }
+
     void debug_print() {
         cout << "Numero de niveles: " << levels.size() << endl;
         for (size_t i = 0; i < levels.size(); ++i) {
@@ -153,8 +154,10 @@ public:
                 for (const auto& entry : levels[i]) {
                     string tipo =  type_levels[i][entry.first];
                     cout << "  " << entry.first << " (" << tipo << ") = ";
-                    if (tipo == "int" || tipo == "bool") {
+                    if (tipo == "int") {
                         cout << entry.second.first;
+                    } else if (tipo == "bool") {
+                        cout << (entry.second.first ? "true" : "false");
                     } else if (tipo == "string") {
                         cout << "\"" << entry.second.second << "\"";
                     }

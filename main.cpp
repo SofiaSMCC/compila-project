@@ -5,6 +5,7 @@
 #include "parser.h"
 #include "type_visitor.h"
 #include "environment.h"
+#include "eval_visitor.h"
 #include "visitor.h"
 
 using namespace std;
@@ -47,7 +48,8 @@ int main(int argc, const char* argv[]) {
         Environment env;
         TypeVisitor typeVisitor(&env);
         typeVisitor.check(program);
-
+        EVALVisitor evalVisitor(env);
+        evalVisitor.ejecutar(program);
         delete program;
     } catch (const exception& e) {
         cout << "Error durante la ejecución: " << e.what() << endl;

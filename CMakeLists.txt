@@ -14,4 +14,5 @@ add_executable(Compila_Project
         visitor.cpp
         imp_value.cpp
         environment.h
-        type_visitor.cpp)
+        type_visitor.cpp
+        eval_visitor.cpp)
