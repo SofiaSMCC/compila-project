@@ -41,14 +41,13 @@ ImpValue FCallExp::accept(Visitor *visitor) {
     return visitor->visit(this);
 }
 
+ImpValue InitValue::accept(Visitor* visitor) {
+    return visitor->visit(this);
+}
+
 ///////////////////////////////////////////////////////
 
 int FCallStatement::accept(Visitor *visitor) {
-    visitor->visit(this);
-    return 0;
-}
-
-int InitValue::accept(Visitor* visitor) {
     visitor->visit(this);
     return 0;
 }
@@ -365,7 +364,7 @@ void PrintVisitor::visit(Body* b) {
     if (b->slist) b->slist->accept(this);
 }
 
-void PrintVisitor::visit(InitValue* iv) {
+ImpValue PrintVisitor::visit(InitValue* iv) {
     if (iv->isList) {
         std::cout << "{";
         for (size_t i = 0; i < iv->list.size(); ++i) {
@@ -376,6 +375,7 @@ void PrintVisitor::visit(InitValue* iv) {
     } else if (iv->value) {
         iv->value->accept(this);
     }
+    return ImpValue();
 }
 
 void PrintVisitor::visit(FCallStatement* stm) {

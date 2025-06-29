@@ -12,6 +12,7 @@ enum BinaryOp { PLUS_OP, MINUS_OP, MUL_OP, DIV_OP,
                 LT_OP, LET_OP, GT_OP, GET_OP, EQ_OP, AND_OP, OR_OP, NOT_OP, DIFF_OP,
                 INC_OP, DEC_OP};
 
+class Visitor;
 class Body;
 
 class Exp {
@@ -104,7 +105,7 @@ public:
     vector<InitValue*> list;
     InitValue(Exp* val);
     InitValue(vector<InitValue*> list);
-    virtual int accept(Visitor* visitor);
+    virtual ImpValue accept(Visitor* visitor);
     ~InitValue();
 };
 

@@ -5,22 +5,19 @@
 #include <vector>
 using namespace std;
 
-enum ImpType { INT, BOOL, STRING, ARRAY, NONE };
-
 class ImpValue {
 public:
-    ImpType type;
+    string type;
     int int_value;
     bool bool_value;
     string string_value;
     vector<ImpValue> array_value;
 
     ImpValue();
-    ImpValue(ImpType tipo, int valor, bool bol, string str_valor);
+    ImpValue(string tipo, int valor, bool bol, string str_valor);
     ~ImpValue();
 
-    void set_default_value(ImpType tt);
-    string getTypeName() const;
+    static string get_basic_type(string s);
 };
 
 #endif //COMPILA_PROJECT_IMP_VALUE_H

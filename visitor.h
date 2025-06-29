@@ -43,8 +43,8 @@ public:
     virtual ImpValue visit(IFExp* exp) = 0;
     virtual ImpValue visit(FCallExp* exp) = 0;
     virtual ImpValue visit(ArrayAccessExp* exp) = 0;
+    virtual ImpValue visit(InitValue* iv) = 0;
 
-    virtual void visit(InitValue* iv) = 0;
     virtual void visit(AssignStatement* stm) = 0;
     virtual void visit(FCallStatement* stm) = 0;
     virtual void visit(PrintStatement* stm) = 0;
@@ -81,8 +81,8 @@ public:
     ImpValue visit(IFExp* exp) override;
     ImpValue visit(FCallExp* exp) override;
     ImpValue visit(ArrayAccessExp* exp) override;
+    ImpValue visit(InitValue* iv) override;
 
-    void visit(InitValue* iv) override;
     void visit(AssignStatement* stm) override;
     void visit(PrintStatement* stm) override;
     void visit(IfStatement* stm) override;

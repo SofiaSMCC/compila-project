@@ -3,6 +3,8 @@
 #include <string>
 #include "scanner.h"
 #include "parser.h"
+#include "type_visitor.h"
+#include "environment.h"
 #include "visitor.h"
 
 using namespace std;
@@ -42,6 +44,9 @@ int main(int argc, const char* argv[]) {
         cout << "Parsing exitoso" << endl << endl;
         PrintVisitor printer;
         printer.imprimir(program);
+        Environment env;
+        TypeVisitor typeVisitor(&env);
+        typeVisitor.check(program);
 
         delete program;
     } catch (const exception& e) {

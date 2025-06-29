@@ -12,4 +12,6 @@ add_executable(Compila_Project
         exp.cpp
         parser.cpp
         visitor.cpp
-        imp_value.cpp)
+        imp_value.cpp
+        environment.h
+        type_visitor.cpp)

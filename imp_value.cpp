@@ -1,29 +1,28 @@
 #include "imp_value.h"
 
-ImpValue::ImpValue() : type(NONE) {}
-ImpValue::ImpValue(ImpType tipo, int valor, bool bol, string str_valor)
+ImpValue::ImpValue() : type("none") {}
+ImpValue::ImpValue(string tipo, int valor, bool bol, string str_valor)
         : type(tipo), int_value(valor), bool_value(bol), string_value(str_valor), array_value() {}
 
 ImpValue::~ImpValue() {}
 
-void ImpValue::set_default_value(ImpType tt) {
-    type = tt;
-    int_value = 0;
-    bool_value = false;
-    string_value = "";
-    array_value.clear();
-    if (tt == ARRAY) {
-        array_value = vector<ImpValue>();
-    }
-}
+#include <algorithm>
+#include <cctype>
 
-string ImpValue::getTypeName() const {
-    switch (type) {
-        case INT: return "INT";
-        case BOOL: return "BOOL";
-        case STRING: return "STRING";
-        case ARRAY: return "ARRAY";
-        case NONE: return "NONE";
-        default: return "UNKNOWN";
+string ImpValue::get_basic_type(string s) {
+    while(!s.empty() && isspace(s.front())) s.erase(s.begin());
+    while(!s.empty() && isspace(s.back())) s.pop_back();
+
+    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+
+    if (s == "int" || s == "integer"){
+        return "int";
     }
+    if (s == "string"){
+        return "string";
+    }
+    if (s == "bool" || s == "boolean"){
+        return "bool";
+    }
+    return "none";
 }
