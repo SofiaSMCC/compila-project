@@ -157,11 +157,12 @@ public:
 class ForStatement : public Stm {
 public:
     string id;
+    string type;
     Exp* start;
     Exp* condition;
     Exp* step;
     Body* b;
-    ForStatement(string id, Exp* start, Exp* condition, Exp* step, Body* b);
+    ForStatement(string id,string type, Exp* start, Exp* condition, Exp* step, Body* b);
     int accept(Visitor* visitor);
     ~ForStatement();
 };

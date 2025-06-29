@@ -275,7 +275,7 @@ void PrintVisitor::visit(DoWhileStatement* stm) {
 
 void PrintVisitor::visit(ForStatement* stm) {
     printIndent();
-    cout << "for (int " << stm->id << " = ";
+    cout << "for ("<<stm->type <<" "<< stm->id << " = ";
     stm->start->accept(this);
     cout << "; ";
     stm->condition->accept(this);

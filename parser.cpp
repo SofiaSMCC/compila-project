@@ -226,7 +226,6 @@ Var* Parser::ParseVar() {
             exit(1);
         }
         int n = stoi(previous->text);
-
         NumberExp* ne = new NumberExp(n);
 
         if(!match(Token::CD)) {
@@ -410,6 +409,7 @@ Stm* Parser::ParseStatement(){
             cout << "Error: se esperaba declaración de variable en la inicialización del for (por ejemplo: int i = 0)." << endl;
             exit(1);
         }
+        string type=current->text;
         advance();
         if (!match(Token::ID)) {
             cout << "Error: se esperaba un id después de la expresión." << endl;
@@ -462,7 +462,7 @@ Stm* Parser::ParseStatement(){
             cout << "Error: se esperaba un '}' después del body." << endl;
             exit(1);
         }
-        return new ForStatement(id, start, condition, step, b);
+        return new ForStatement( id, type,start, condition, step, b);
     }
     else if (match(Token::WHILE)){
         if (!match(Token::PI)) {

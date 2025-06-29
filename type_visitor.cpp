@@ -109,6 +109,13 @@ void TypeVisitor::visit(DoWhileStatement* stm) {
 }
 
 void TypeVisitor::visit(ForStatement* stm) {
+    ImpValue rhs=stm->start->accept(this);
+    if(rhs.type!=stm->type) {
+        cout<<"Error en el type del for"<<endl;
+    }
+    if (stm->type=="string") {
+        cout<<"No se puede declarar string dentro del for"<<endl;
+    }
 }
 
 void TypeVisitor::visit(ReturnStatement* stm) {
