@@ -448,7 +448,7 @@ Stm* Parser::ParseStatement(){
             cout << "Error: se esperaba '++' o '--' en el paso del for." << endl;
             exit(1);
         }
-        Exp* step = new BinaryExp(new IdentifierExp(stepId), nullptr, op);
+        Exp* step = new BinaryExp(new IdentifierExp(stepId), new NumberExp(1), op);
         if (!match(Token::PD)) {
             cout << "Error: se esperaba un ')' después de la expresión." << endl;
             exit(1);

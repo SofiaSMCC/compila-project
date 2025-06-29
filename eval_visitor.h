@@ -6,8 +6,11 @@
 
 class EVALVisitor : public Visitor {
 public:
+    unordered_map<std::string, FunDec*> funciones;
     Environment env;
     EVALVisitor(Environment e) : env(e) {}
+    ImpValue return_value;
+    bool return_encountered = false;
     void ejecutar(Program* program);
 
     ImpValue visit(BinaryExp* exp) override;

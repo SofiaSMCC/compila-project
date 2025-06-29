@@ -10,7 +10,7 @@ using namespace std;
 class TypeVisitor : public Visitor {
     Environment* env;
 public:
-
+    std::unordered_map<string, FunDec*> funciones;
     TypeVisitor(Environment* env_) {
         env = env_;
     }

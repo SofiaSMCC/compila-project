@@ -8,13 +8,12 @@ class GenCode : public Visitor {
 private:
     std::ostream& out;
     unordered_map<string, int> memoria;
-    unordered_map<string, bool> memoriaGlobal;
     int offset = -8;
-    int labelcont = 0; //while y if
+    int labelcont = 0;
     bool entornoFuncion = false;
     string nombreFuncion;
 public:
-    GenCode(std::ostream& out) : out(out) {}
+    GenCode(ostream& out) : out(out) {}
     void generar(Program* program);
 
     ImpValue visit(BinaryExp* exp) override;
