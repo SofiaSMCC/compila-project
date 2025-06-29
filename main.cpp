@@ -6,6 +6,7 @@
 #include "type_visitor.h"
 #include "environment.h"
 #include "eval_visitor.h"
+#include "codegen.h"
 #include "visitor.h"
 
 using namespace std;
@@ -42,14 +43,30 @@ int main(int argc, const char* argv[]) {
 
     try {
         Program* program = parser.ParseProgram();
+        string inputFile(argv[1]);
+        size_t dotPos = inputFile.find_last_of('.');
+        string baseName = (dotPos == string::npos) ? inputFile : inputFile.substr(0, dotPos);
+        string outputFilename = baseName + ".s";
+        ofstream outfile(outputFilename);
         cout << "Parsing exitoso" << endl << endl;
         PrintVisitor printer;
         printer.imprimir(program);
+        cout << "Print visitor exitoso" << endl << endl;
         Environment env;
         TypeVisitor typeVisitor(&env);
         typeVisitor.check(program);
+        cout << "Type visitor exitoso" << endl << endl;
         EVALVisitor evalVisitor(env);
         evalVisitor.ejecutar(program);
+        cout << "Eval visitor exitoso" << endl << endl;
+        if (!outfile.is_open()) {
+            cerr << "Error al crear el archivo de salida: " << outputFilename << endl;
+            return 1;
+        }
+        cout << "Generando codigo ensamblador en " << outputFilename << endl;
+        GenCode codigo(outfile);
+        codigo.generar(program);
+        outfile.close();
         delete program;
     } catch (const exception& e) {
         cout << "Error durante la ejecución: " << e.what() << endl;

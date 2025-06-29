@@ -62,6 +62,7 @@ public:
     virtual void visit(FunDecList* fdl) = 0;
 
     virtual void visit(Body* b) = 0;
+    virtual void visit(Program* p) = 0;
 };
 
 class PrintVisitor : public Visitor {
@@ -100,6 +101,7 @@ public:
     void visit(FunDecList* fdl) override;
 
     void visit(Body* b) override;
+    void visit(Program* program) override;
 };
 
 #endif //COMPILA_PROJECT_VISITOR_H

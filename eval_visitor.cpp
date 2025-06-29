@@ -1,5 +1,7 @@
 #include "eval_visitor.h"
 
+#include <token.h>
+
 void EVALVisitor::ejecutar(Program* program) {
     env.add_level();
     program->func->accept(this);
@@ -8,9 +10,20 @@ void EVALVisitor::ejecutar(Program* program) {
     env.remove_level();
 }
 
+void EVALVisitor::visit(Program* program) {
+    if (program->func)
+        program->func->accept(this);
+}
+
 // Exp
 
 ImpValue EVALVisitor::visit(BinaryExp *exp) {
+    auto a=exp->left->accept(this);
+    auto b=exp->right->accept(this);
+    if(exp->op==PLUS_OP) {
+        //env.update(,a.int_value+b.int_value);
+        cout<<" value :"<<a.int_value+b.int_value<<endl;
+    }
     return ImpValue();
 }
 
@@ -52,6 +65,9 @@ ImpValue EVALVisitor::visit(LValue *exp) {
 }
 
 ImpValue EVALVisitor::visit(IFExp *exp) {
+    if(exp->condi->accept(this).bool_value) {
+        exp->body->accept(this);
+    }
     return ImpValue();
 }
 
@@ -85,9 +101,16 @@ void EVALVisitor::visit(AssignStatement *stm) {
 }
 
 void EVALVisitor::visit(IfStatement *stm) {
+    for(auto stms:stm->sent_if)
+        stms->accept(this);
+
 }
 
 void EVALVisitor::visit(ForStatement *stm) {
+    if(stm->condition->accept(this).bool_value) {
+        stm->b->accept(this);
+    }
+
 }
 
 void EVALVisitor::visit(StatementList *stm) {
@@ -97,6 +120,10 @@ void EVALVisitor::visit(StatementList *stm) {
 }
 
 void EVALVisitor::visit(DoWhileStatement *stm) {
+    stm->b->accept(this);
+    if(stm->condition->accept(this).bool_value) {
+        stm->b->accept(this);
+    }
 }
 
 void EVALVisitor::visit(ReturnStatement *stm) {
@@ -104,6 +131,9 @@ void EVALVisitor::visit(ReturnStatement *stm) {
 }
 
 void EVALVisitor::visit(WhileStatement *stm) {
+    if(stm->condition->accept(this).bool_value) {
+        stm->b->accept(this);
+    }
 }
 
 void EVALVisitor::visit(PrintStatement *stm) {

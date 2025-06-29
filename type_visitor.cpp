@@ -15,6 +15,10 @@ void TypeVisitor::check(Program* program){
     env->remove_level();
 }
 
+void TypeVisitor::visit(Program *program) {
+    program->func->accept(this);
+}
+
 // Exp
 
 ImpValue TypeVisitor::visit(NumberExp* exp) {

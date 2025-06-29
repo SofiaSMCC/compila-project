@@ -267,6 +267,7 @@ public:
     VarDecList* vdl;
     FunDecList* func;
     Program(VarDecList* vdl, FunDecList* func);
+    int accept(Visitor* visitor);
     ~Program();
 };
 

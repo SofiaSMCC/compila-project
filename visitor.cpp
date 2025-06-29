@@ -47,6 +47,11 @@ ImpValue InitValue::accept(Visitor* visitor) {
 
 ///////////////////////////////////////////////////////
 
+int Program::accept(Visitor *visitor) {
+    visitor->visit(this);
+    return 0;
+}
+
 int FCallStatement::accept(Visitor *visitor) {
     visitor->visit(this);
     return 0;
@@ -200,6 +205,10 @@ ImpValue PrintVisitor::visit(ArrayAccessExp* exp) {
 }
 
 // Stm
+
+void PrintVisitor::visit(Program *program) {
+    program->func->accept(this);
+}
 
 void PrintVisitor::imprimir(Program* program){
     //program->vdl->accept(this);

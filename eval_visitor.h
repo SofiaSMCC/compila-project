@@ -38,6 +38,7 @@ public:
     void visit(FunDecList* fdl) override;
 
     void visit(Body* b) override;
+    void visit(Program* program) override;
 };
 
 #endif //COMPILA_PROJECT_EVAL_VISITOR_H
