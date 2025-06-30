@@ -1,6 +1,15 @@
 #include "eval_visitor.h"
 
 #include <token.h>
+void recolectaValores(InitValue* iv, vector<ImpValue>& valores, EVALVisitor* visitor) {
+    if (iv->isList) {
+        for (auto elem : iv->list) {
+            recolectaValores(elem, valores, visitor);
+        }
+    } else if (iv->value) {
+        valores.push_back(iv->value->accept(visitor));
+    }
+}
 
 void EVALVisitor::ejecutar(Program* program) {
     env.add_level();
@@ -285,9 +294,32 @@ void EVALVisitor::visit(Body *b) {
 }
 
 
+
 void EVALVisitor::visit(VarDec *stm) {
     for(auto i: stm->vars){
-        if (i->iv) {
+        // Caso array
+        if (!i->dimList.empty() && i->iv && i->iv->isList) {
+            vector<ImpValue> valores;
+            recolectaValores(i->iv, valores, this);
+
+            for (size_t idx = 0; idx < valores.size(); ++idx) {
+                string nombre = i->id + "[" + to_string(idx) + "]";
+                if (stm->type == "int") {
+                    env.add_var(nombre, valores[idx].int_value, stm->type);
+                } else if (stm->type == "bool") {
+                    env.add_var(nombre, valores[idx].bool_value ? 1 : 0, stm->type);
+                } else if (stm->type == "string") {
+                    env.add_var(nombre, valores[idx].string_value, stm->type);
+                }
+                //cout << "Guardado " << nombre << " = ";
+                //if (stm->type == "int") std::cout << valores[idx].int_value;
+                //else if (stm->type == "bool") std::cout << (valores[idx].bool_value ? "true" : "false");
+                //else std::cout << valores[idx].string_value;
+                //cout << std::endl;
+            }
+        }
+        // Caso variable simple (no array)
+        else if (i->iv) {
             ImpValue val = i->iv->accept(this);
             if (stm->type == "int") {
                 env.add_var(i->id, val.int_value, stm->type);
@@ -297,7 +329,7 @@ void EVALVisitor::visit(VarDec *stm) {
                 env.add_var(i->id, val.string_value, stm->type);
             }
         } else {
-            env.add_var(i->id, stm->type);
+            env.add_var(i->id, stm->type); // Sin valor inicial, usa el default
         }
     }
 }

@@ -155,18 +155,26 @@ void TypeVisitor::visit(VarDec* vd) {
         cout << "type error en declaración de variable" << endl;
         exit(0);
     }
+
     for(auto i: vd->vars){
-        env->add_var(i->id, t);
-        if(i->iv){
+        if (!i->dimList.empty() && i->iv) {
+            cout << "array";
+            for (int in = 0; in < i->iv->list.size(); in++) {
+                int val = i->iv->list[in]->value->accept(this).int_value;
+                cout << " D: " << val;
+                env->add_var(i->id, val, t); // Aquí probablemente también debas diferenciar por índice
+            }
+        }
+
+        else if(i->iv){
             ImpValue valor_init = i->iv->accept(this);
             if(ImpValue::get_basic_type(valor_init.type) != t){
                 cout << "Error de tipo en inicialización de variable: " << i->id << endl;
                 exit(0);
             }
-            if(!i->dimList.empty()) {
-                cout<< "array";
-            }
+            env->add_var(i->id, t);
         }
+
     }
 }
 
