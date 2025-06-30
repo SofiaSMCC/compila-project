@@ -120,16 +120,27 @@ ImpValue TypeVisitor::visit(BinaryExp* exp) {
                 result2 = left.bool_value == right.bool_value;
             }
             return ImpValue("bool", 0, result2, "");
-
-        case AND_OP:
-            result2 = left.bool_value && right.bool_value;
-            return ImpValue("bool", 0, result2, NULL);
-        case OR_OP:
-            result2 = left.bool_value || right.bool_value;
-            return ImpValue("bool", 0, result2, NULL);
-        case NOT_OP:
-            result2 = !left.bool_value;
-            return ImpValue("bool", 0, result2, NULL);
+        case AND_OP: {
+            ImpValue left = exp->left->accept(this);
+            if (!left.bool_value) {
+                return ImpValue("bool", 0, false, "");
+            }
+            ImpValue right = exp->right->accept(this);
+            bool result2 = right.bool_value;
+            return ImpValue("bool", 0, result2, "");
+        }
+        case OR_OP: {
+            ImpValue left = exp->left->accept(this);
+            if (left.bool_value) {
+                return ImpValue("bool", 0, true, "");
+            }
+            ImpValue right = exp->right->accept(this);
+            bool result2 = right.bool_value;
+            return ImpValue("bool", 0, result2, "");
+        }
+        case NOT_OP: {
+            return ImpValue("bool", 0, !(left.bool_value), "");
+        }
 
         default:
             cout << "Operador desconocido" << endl;

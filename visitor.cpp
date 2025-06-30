@@ -132,6 +132,13 @@ int Body::accept(Visitor *visitor) {
 // Exp
 
 ImpValue PrintVisitor::visit(BinaryExp* exp) {
+    if (exp->op == NOT_OP && exp->right == nullptr) {
+        cout << "!";
+        cout << "(";
+        exp->left->accept(this);
+        cout << ")";
+        return ImpValue();
+    }
     // Operadores unarios disfrazados
     if (exp->op == INC_OP) {
         exp->left->accept(this);
