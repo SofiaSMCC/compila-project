@@ -132,16 +132,26 @@ int Body::accept(Visitor *visitor) {
 // Exp
 
 ImpValue PrintVisitor::visit(BinaryExp* exp) {
-    if ((exp->op == INC_OP || exp->op == DEC_OP) && exp->right == nullptr) {
+    // Operadores unarios disfrazados
+    if (exp->op == INC_OP) {
         exp->left->accept(this);
-        cout << Exp::binopToChar(exp->op);
+        cout << "++";
+        return ImpValue();
+    } else if (exp->op == DEC_OP) {
+        exp->left->accept(this);
+        cout << "--";
         return ImpValue();
     }
+
+    // Operadores binarios normales
+    cout << "(";
     exp->left->accept(this);
     cout << " " << Exp::binopToChar(exp->op) << " ";
-    if (exp->right) exp->right->accept(this);
+    exp->right->accept(this);
+    cout << ")";
     return ImpValue();
 }
+
 
 ImpValue PrintVisitor::visit(NumberExp* exp) {
     cout << exp->value;
@@ -211,11 +221,12 @@ void PrintVisitor::visit(Program *program) {
 }
 
 void PrintVisitor::imprimir(Program* program){
-    //program->vdl->accept(this);
+    cout << "imprimir" << endl;
     program->func->accept(this);
 };
 
 void PrintVisitor::visit(AssignStatement* stm) {
+    //cout << "void PrintVisitor::visit(AssignStatement* stm) {" << endl;
     printIndent();
     stm->lvalue->accept(this);
     cout << " = ";
@@ -226,13 +237,18 @@ void PrintVisitor::visit(AssignStatement* stm) {
 void PrintVisitor::visit(PrintStatement* stm) {
     printIndent();
     cout << "printf(";
-    if(stm->format.front() != '"') cout << "\"";
+    if (stm->format.front() != '"') cout << "\"";
     cout << stm->format;
-    if(stm->format.back() != '"') cout << "\"";
-    cout << ", ";
-    stm->e->accept(this);
+    if (stm->format.back() != '"') cout << "\"";
+
+    for (size_t i = 0; i < stm->args.size(); ++i) {
+        cout << ", ";
+        stm->args[i]->accept(this);
+    }
+
     cout << ");" << endl;
 }
+
 
 void PrintVisitor::visit(IfStatement* stm) {
     size_t n = stm->sent_if.size();

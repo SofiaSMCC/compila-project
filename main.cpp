@@ -48,15 +48,24 @@ int main(int argc, const char* argv[]) {
         string baseName = (dotPos == string::npos) ? inputFile : inputFile.substr(0, dotPos);
         string outputFilename = baseName + ".s";
         ofstream outfile(outputFilename);
+        
         cout << "Parsing exitoso" << endl << endl;
         PrintVisitor printer;
-        printer.imprimir(program);
+        //cout << "MIAUUUUUUUUUUUUU" << endl;
+        printer.imprimir(program); //AQUI ESTA EL PROBLEMA
+        //cout << "MIAUUUUUUUUUUUUU" << endl;
         cout << "Print visitor exitoso" << endl << endl;
         Environment env;
+        cout << "///////////////////////////////////////////////////////////////////////////////" << endl;
         TypeVisitor typeVisitor(&env);
-        typeVisitor.check(program);
+        cout << "TypeVisitor typeVisitor(&env);" << endl;
+        typeVisitor.check(program);//EL PROBLEMA ESTA AQUI
+        cout << "typeVisitor.check(program);" << endl;
         cout << "Type visitor exitoso" << endl << endl;
+
+
         EVALVisitor evalVisitor(env);
+        cout << "EVALUAR EVAL VISITOR" <<endl;
         evalVisitor.ejecutar(program);
         cout << "Eval visitor exitoso" << endl << endl;
         if (!outfile.is_open()) {
@@ -64,8 +73,17 @@ int main(int argc, const char* argv[]) {
             return 1;
         }
         cout << "Generando codigo ensamblador en " << outputFilename << endl;
+
+        cout << "miau" << endl;
         GenCode codigo(outfile);
-        codigo.generar(program);
+        cout << "miau" << endl;
+
+        if (!program) {
+            cout << "Error: el programa es nullptr" << endl;
+            return 1;
+}
+        codigo.generar(program); //ERROR AQUI
+        cout << "miau" << endl;
         outfile.close();
         delete program;
     } catch (const exception& e) {

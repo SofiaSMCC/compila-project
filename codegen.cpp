@@ -94,18 +94,21 @@ void GenCode::visit(Body* b) {
 }
 
 void GenCode::visit(VarDecList* stm) {
+    //cout << "var dec list" << endl;
     for (auto vd : stm->vardecs){
         vd->accept(this);
     }
 }
 
 void GenCode::visit(StatementList* stm) {
+    //cout << "stm list" << endl;
     for (auto s : stm->stms){
         s->accept(this);
     }
 }
 
 void GenCode::visit(AssignStatement* stm) {
+    //cout << "assign" << endl;
     if (!stm->lvalue->indices.empty()) {
         stm->lvalue->indices[0]->accept(this);
         out << "    movq %rax, %rcx\n";
@@ -118,15 +121,20 @@ void GenCode::visit(AssignStatement* stm) {
 }
 
 void GenCode::visit(PrintStatement* stm) {
-    stm->e->accept(this);
-    out <<
-        "    movq %rax, %rsi\n"
-        "    leaq print_fmt(%rip), %rdi\n"
-        "    movl $0, %eax\n"
-        "    call printf@PLT\n";
+    for (size_t i = 0; i < stm->args.size(); ++i) {
+        stm->args[i]->accept(this);  // Resultado en %rax
+        out <<
+            "    movq %rax, %rsi\n"
+            "    leaq print_fmt(%rip), %rdi\n"
+            "    movl $0, %eax\n"
+            "    call printf@PLT\n";
+    }
 }
 
+
+
 void GenCode::visit(ReturnStatement* stm) {
+    //cout << "return" << endl;
     stm->e->accept(this);
     out << "    jmp .end_" << nombreFuncion << "\n";
 }
@@ -134,6 +142,7 @@ void GenCode::visit(ReturnStatement* stm) {
 void GenCode::visit(Var *v) {}
 
 void GenCode::visit(WhileStatement *stmt) {
+    //cout << "while" << endl;
     int start_label = labelcont++;
     int end_label = labelcont++;
 
@@ -149,6 +158,7 @@ void GenCode::visit(WhileStatement *stmt) {
 }
 
 void GenCode::visit(IfStatement *stmt) {
+    //cout << "if statemetn" << endl;
     int endif_label = labelcont++;
     std::vector<int> else_labels;
 
@@ -182,6 +192,7 @@ void GenCode::visit(IfStatement *stmt) {
 }
 
 void GenCode::visit(ForStatement *stmt) {
+    //cout << "for statement" << endl;
     if (memoria.count(stmt->id) == 0) {
         memoria[stmt->id] = offset;
         offset -= 8;
@@ -209,6 +220,7 @@ void GenCode::visit(ForStatement *stmt) {
 }
 
 void GenCode::visit(FCallStatement *stm) {
+    //cout << "f call stm" << endl;
     stm->call->accept(this);
 }
 
@@ -222,6 +234,7 @@ void GenCode::visit(DoWhileStatement *stm) {
 }
 
 void GenCode::visit(FunDecList *fdl) {
+    //cout << "fun dec list" << endl;
     for (auto f : fdl->Fundecs)
         f->accept(this);
 }
@@ -229,16 +242,19 @@ void GenCode::visit(FunDecList *fdl) {
 // Exp
 
 ImpValue GenCode::visit(StringLiteral *exp) {
+    //cout << "string" << endl;
     return ImpValue();
 }
 
 ImpValue GenCode::visit(BoolExp *exp) {
+    //cout << "bool" << endl;
     out << "    movq $" << (exp->value ? 1 : 0) << ", %rax\n";
     return ImpValue();
 }
 
 
 ImpValue GenCode::visit(ArrayAccessExp *exp) {
+    //cout << "array acces exp" << endl;
     // Unidimensional
     exp->indices[0]->accept(this);
     out << "    movq %rax, %rdx\n";
@@ -247,10 +263,12 @@ ImpValue GenCode::visit(ArrayAccessExp *exp) {
 }
 
 ImpValue GenCode::visit(IFExp *exp) {
+    //cout << "if exp" << endl;
     return ImpValue();
 }
 
 ImpValue GenCode::visit(LValue *exp) {
+    //cout << "l value" << endl;
     if (exp->indices.empty()) {
         out << "    movq " << memoria[exp->id] << "(%rbp), %rax\n";
     } else {
@@ -262,6 +280,7 @@ ImpValue GenCode::visit(LValue *exp) {
 }
 
 ImpValue GenCode::visit(FCallExp* exp) {
+    //cout << "fcallexp" << endl;
     int nargs = exp->argumentos.size();
     std::vector<std::string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
     for (int i = 0; i < nargs && i < 6; ++i) {
@@ -274,20 +293,25 @@ ImpValue GenCode::visit(FCallExp* exp) {
 
 
 ImpValue GenCode::visit(InitValue *iv) {
+    //cout << "initvalue" << endl;
     return ImpValue();
 }
 
 ImpValue GenCode::visit(NumberExp* exp) {
+    //cout << "number" << endl;
     out << "    movq $" << exp->value << ", %rax\n";
     return ImpValue();
 }
 
 ImpValue GenCode::visit(IdentifierExp* exp) {
+    //cout << "ImpValue GenCode::visit(IdentifierExp* exp) {" << endl;
     out << "    movq " << memoria[exp->name] << "(%rbp), %rax\n";
+    //cout << "fin" << endl;
     return ImpValue();
 }
 
 ImpValue GenCode::visit(BinaryExp* exp) {
+    //cout << "binary" << endl;
     if (exp->op == INC_OP) {
         exp->left->accept(this);
         out << "    addq $1, %rax\n";

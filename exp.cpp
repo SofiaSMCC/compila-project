@@ -25,6 +25,9 @@ AssignStatement::~AssignStatement() {
     delete rhs;
 }
 PrintStatement::PrintStatement(string format, Exp* e): format(format), e(e) {}
+
+PrintStatement::PrintStatement(string format, vector<Exp*> args) : format(format), args(args) {}
+
 PrintStatement::~PrintStatement() {
     delete e;
 }

@@ -1,5 +1,5 @@
 #include "eval_visitor.h"
-#include <token.h>
+#include "token.h"
 
 void recolectaValores(InitValue* iv, vector<ImpValue>& valores, EVALVisitor* visitor) {
     if (iv->isList) {
@@ -178,6 +178,7 @@ ImpValue EVALVisitor::visit(IdentifierExp *exp) {
 }
 
 ImpValue EVALVisitor::visit(LValue *exp) {
+    cout << "LVALUE" << endl;
     // Si no es array, accede normal
     if (exp->indices.empty()) {
         string t = env.lookup_type(exp->id);
@@ -216,6 +217,7 @@ ImpValue EVALVisitor::visit(LValue *exp) {
 }
 
 ImpValue EVALVisitor::visit(IFExp *exp) {
+    cout << "IF EXP" << endl;
     if (!exp->condi || exp->condi->accept(this).bool_value) {
         exp->body->accept(this);
     }
@@ -223,6 +225,7 @@ ImpValue EVALVisitor::visit(IFExp *exp) {
 }
 
 ImpValue EVALVisitor::visit(FCallExp *exp) {
+    cout << "F CALL EXP" << endl;
     if (funciones.count(exp->nombre) == 0) {
         std::cerr << "Error: función no encontrada: " << exp->nombre << std::endl;
         return ImpValue();
@@ -256,6 +259,7 @@ ImpValue EVALVisitor::visit(FCallExp *exp) {
 }
 
 ImpValue EVALVisitor::visit(ArrayAccessExp *exp) {
+    cout << "ARRAY" << endl;
     // Construir el nombre tipo "matriz[2,5]"
     string nombre = exp->arrayName + "[";
     for (size_t i = 0; i < exp->indices.size(); ++i) {
@@ -280,12 +284,14 @@ ImpValue EVALVisitor::visit(ArrayAccessExp *exp) {
 }
 
 ImpValue EVALVisitor::visit(InitValue *iv) {
+    cout << "INIT VALUE" << endl;
     return iv->value->accept(this);
 }
 
 // Statement
 
 void EVALVisitor::visit(AssignStatement *stm) {
+    cout << "VISIT ASSIGN STATEMENT" << endl;
     string var_name;
     // Si el LValue es array
     if (!stm->lvalue->indices.empty()) {
@@ -312,6 +318,7 @@ void EVALVisitor::visit(AssignStatement *stm) {
     }
 }
 void EVALVisitor::visit(IfStatement *stm) {
+    cout << "IF STATEMENT" << endl;
     for (auto stms : stm->sent_if) {
         if (!stms->condi || stms->condi->accept(this).bool_value) {
             stms->body->accept(this);
@@ -321,6 +328,8 @@ void EVALVisitor::visit(IfStatement *stm) {
 }
 
 void EVALVisitor::visit(ForStatement *stm) {
+
+    cout << "FOR" << endl;
     env.add_level();
 
     env.add_var(stm->id, 0, stm->type);
@@ -334,9 +343,11 @@ void EVALVisitor::visit(ForStatement *stm) {
     }
 
     env.remove_level();
+    cout << "END FOR" << endl;
 }
 
 void EVALVisitor::visit(StatementList *stm) {
+    cout << "STM LIST" << endl;
     for (auto s : stm->stms) {
         s->accept(this);
         if (this->return_encountered) break;
@@ -351,6 +362,7 @@ void EVALVisitor::visit(DoWhileStatement *stm) {
 }
 
 void EVALVisitor::visit(ReturnStatement *stm) {
+    cout << "RETURN" << endl;
      if (stm->e) {
         this->return_value = stm->e->accept(this);
         this->return_encountered = true;
@@ -358,6 +370,7 @@ void EVALVisitor::visit(ReturnStatement *stm) {
 }
 
 void EVALVisitor::visit(WhileStatement *stm) {
+    cout << "WHILE" << endl;
     while (stm->condition->accept(this).bool_value) {
         stm->b->accept(this);
         if (this->return_encountered){
@@ -367,29 +380,52 @@ void EVALVisitor::visit(WhileStatement *stm) {
 }
 
 void EVALVisitor::visit(PrintStatement *stm) {
-    ImpValue arg = stm->e->accept(this);
-    if (stm->format == "%s\n") {
-        if (arg.type == "string") {
-            cout << arg.string_value << endl;
-        } else if (arg.type == "bool") {
-            cout << (arg.bool_value ? "true" : "false") << endl;
-        } else {
-            cout << "Error: printf formato %s pero no string/bool" << endl;
+    cout << "PRINT" << endl;
+
+    for (Exp* argExp : stm->args) {
+        if (!argExp) {
+            cout << "Error: expresión nula en PrintStatement" << endl;
+            exit(1);
         }
-    } else if (stm->format == "%d\n") {
-        if (arg.type == "int" || arg.type == "bool") {
-            cout << (arg.type == "int" ? arg.int_value : (arg.bool_value ? 1 : 0)) << endl;
+
+        ImpValue arg = argExp->accept(this);
+
+        if (stm->format.find("%s") != string::npos) {
+            if (arg.type == "string") {
+                cout << arg.string_value;
+            } else if (arg.type == "bool") {
+                cout << (arg.bool_value ? "true" : "false");
+            } else {
+                cout << "Error: printf formato %s pero no string/bool" << endl;
+                exit(1);
+            }
+        } else if (stm->format.find("%d") != string::npos) {
+            if (arg.type == "int") {
+                cout << arg.int_value;
+            } else if (arg.type == "bool") {
+                cout << (arg.bool_value ? 1 : 0);
+            } else {
+                cout << "Error: printf formato %d pero no int/bool" << endl;
+                exit(1);
+            }
         } else {
-            cout << "Error: printf formato %d pero no int/bool" << endl;
+            cout << "Error: formato printf no reconocido: " << stm->format << endl;
+            exit(1);
         }
     }
+
+    cout << endl;
+    cout << "END PRINT" << endl;
 }
 
+
 void EVALVisitor::visit(FCallStatement *stm) {
+    cout << "F CALL STATEMENT" << endl;
     ImpValue unused = stm->call->accept(this);
 }
 
 void EVALVisitor::visit(VarDecList *stm) {
+    cout << "VARDEC LIST" << endl;
     for (auto vd : stm->vardecs) {
         vd->accept(this);
     }

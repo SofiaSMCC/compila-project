@@ -320,25 +320,30 @@ Stm* Parser::ParseStatement(){
             cout << "Error: se esperaba un '(' después del printf." << endl;
             exit(1);
         }
+        
+        // Acepta printf con o sin argumentos adicionales
         if (!match(Token::STRING)) {
-            cout << "Error: se esperaba format después del paréntesis izquierdo." << endl;
+            cout << "Error: se esperaba un string de formato (ej: \"%d\") después del '('." << endl;
             exit(1);
         }
         string format = previous->text;
-        if (!match(Token::COMA)) {
-            cout << "Error: se esperaba una ',' después del format." << endl;
-            exit(1);
+
+        // Argumentos adicionales (opcionales)
+        vector<Exp*> args;
+        while (match(Token::COMA)) {
+            args.push_back(parseAExp());
         }
-        e = parseAExp();
+
         if (!match(Token::PD)) {
-            cout << "Error: se esperaba un ')' después de la expresión." << endl;
+            cout << "Error: se esperaba un ')' después de los argumentos." << endl;
             exit(1);
         }
         if (!match(Token::PC)) {
-            cout << "Error: se esperaba un ';' al final del printf." << endl;
+            cout << "Error: se esperaba ';' al final del printf." << endl;
             exit(1);
         }
-        s = new PrintStatement(format, e);
+
+        s = new PrintStatement(format, args);  // Asegúrate que PrintStatement acepte un vector
     }
     else if (match(Token::IF)) {
         vector<IFExp*> ifexpl;
