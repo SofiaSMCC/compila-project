@@ -12,8 +12,8 @@
 using namespace std;
 
 int main(int argc, const char* argv[]) {
-    if (argc != 2) {
-        cout << "Numero incorrecto de argumentos. Uso: " << argv[0] << " <archivo_de_entrada>" << endl;
+    if (argc < 2 || argc > 3) {
+        cout << "Numero incorrecto de argumentos. Uso: " << argv[0] << " <archivo_de_entrada> [archivo_de_salida]" << endl;
         exit(1);
     }
 
@@ -43,10 +43,15 @@ int main(int argc, const char* argv[]) {
 
     try {
         Program* program = parser.ParseProgram();
-        string inputFile(argv[1]);
-        size_t dotPos = inputFile.find_last_of('.');
-        string baseName = (dotPos == string::npos) ? inputFile : inputFile.substr(0, dotPos);
-        string outputFilename = baseName + ".s";
+        string outputFilename;
+        if (argc == 3) {
+            outputFilename = argv[2];
+        } else {
+            string inputFile(argv[1]);
+            size_t dotPos = inputFile.find_last_of('.');
+            string baseName = (dotPos == string::npos) ? inputFile : inputFile.substr(0, dotPos);
+            outputFilename = baseName + ".s";
+        }
         ofstream outfile(outputFilename);
         cout << "Parsing exitoso" << endl << endl;
         PrintVisitor printer;

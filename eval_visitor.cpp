@@ -114,10 +114,11 @@ ImpValue EVALVisitor::visit(BinaryExp *exp) {
                 result2 = left.bool_value == right.bool_value;
             }
             return ImpValue("bool", 0, result2,"");
-        case NOT_OP:  // !
-            result2 = !left.bool_value;
-            return ImpValue("bool", 0, result2,"");
-        case DIFF_OP: //!=
+        case NOT_OP:
+        {
+            return ImpValue("bool", 0, !(left.bool_value), "");
+        }
+            case DIFF_OP: //!=
             result2 = left.int_value != right.int_value;
             return ImpValue("bool", 0, result2, "");
         case GT_OP:   // >
@@ -127,11 +128,19 @@ ImpValue EVALVisitor::visit(BinaryExp *exp) {
             result2 = left.int_value >= right.int_value;
             return ImpValue("bool", 0, result2, "");
         case AND_OP:
-            result2 = left.bool_value && right.bool_value;
-            return ImpValue("bool", 0, result2,"");
+            if (!left.bool_value) {
+                return ImpValue("bool", 0, false, "");
+            }
+            right = exp->right->accept(this);
+            result2 = right.bool_value;
+            return ImpValue("bool", 0, result2, "");
         case OR_OP:
-            result2 = left.bool_value || right.bool_value;
-            return ImpValue("bool", 0, result2,"");
+            if (left.bool_value) {
+                return ImpValue("bool", 0, true, "");
+            }
+            right = exp->right->accept(this);
+            result2 = right.bool_value;
+            return ImpValue("bool", 0, result2, "");
         case INC_OP:
             result1 = left.int_value + 1;
             return ImpValue("int", result1, false, "");

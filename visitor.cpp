@@ -132,6 +132,13 @@ int Body::accept(Visitor *visitor) {
 // Exp
 
 ImpValue PrintVisitor::visit(BinaryExp* exp) {
+    if (exp->op == NOT_OP && exp->right == nullptr) {
+        cout << "!";
+        cout << "(";
+        exp->left->accept(this);
+        cout << ")";
+        return ImpValue();
+    }
     if ((exp->op == INC_OP || exp->op == DEC_OP) && exp->right == nullptr) {
         exp->left->accept(this);
         cout << Exp::binopToChar(exp->op);
