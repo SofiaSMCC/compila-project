@@ -82,6 +82,7 @@ ImpValue EVALVisitor::visit(BinaryExp *exp) {
     }
 
     switch (exp->op) {
+        // arithmetic
         case PLUS_OP:
             result1 = left.int_value + right.int_value;
             return ImpValue("int", result1, false,"");
@@ -99,36 +100,48 @@ ImpValue EVALVisitor::visit(BinaryExp *exp) {
                 result1 = 0;
             }
             return ImpValue("int", result1, false,"");
-
-        case LT_OP:
+            // comparison
+        case LT_OP:  // <
             result2 = left.int_value < right.int_value;
             return ImpValue("bool", 0, result2,"");
-            /*case LE_OP:
-                result2 = left.int_value <= right.int_value;*/
-            return ImpValue("bool", 0, result2,"");
-        case EQ_OP:
+        case LET_OP: // <=
+            result2 = left.int_value <= right.int_value;
+            return ImpValue("bool", 0, result2, "");
+        case EQ_OP:  // ==
             if (left.type == "int" && right.type == "int") {
                 result2 = left.int_value == right.int_value;
             } else {
                 result2 = left.bool_value == right.bool_value;
             }
             return ImpValue("bool", 0, result2,"");
-
+        case NOT_OP:  // !
+            result2 = !left.bool_value;
+            return ImpValue("bool", 0, result2,"");
+        case DIFF_OP: //!=
+            result2 = left.int_value != right.int_value;
+            return ImpValue("bool", 0, result2, "");
+        case GT_OP:   // >
+            result2 = left.int_value > right.int_value;
+            return ImpValue("bool", 0, result2, "");
+        case GET_OP:  // >=
+            result2 = left.int_value >= right.int_value;
+            return ImpValue("bool", 0, result2, "");
         case AND_OP:
             result2 = left.bool_value && right.bool_value;
             return ImpValue("bool", 0, result2,"");
         case OR_OP:
             result2 = left.bool_value || right.bool_value;
             return ImpValue("bool", 0, result2,"");
-        case NOT_OP:
-            result2 = !left.bool_value;
-            return ImpValue("bool", 0, result2,"");
-
+        case INC_OP:
+            result1 = left.int_value + 1;
+            return ImpValue("int", result1, false, "");
+        case DEC_OP:
+            result1 = left.int_value - 1;
+            return ImpValue("int", result1, false, "");
         default:
             cout << "Operador desconocido" << endl;
             return ImpValue();
     }
-    return ImpValue();
 }
 
 ImpValue EVALVisitor::visit(NumberExp *exp) {
