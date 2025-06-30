@@ -567,8 +567,9 @@ Exp* Parser::parseAExp() {
 Exp* Parser::parseBExp() {
     if (match(Token::NOT)) {
         Exp* operand = parseBExp();
-        return new BinaryExp(operand, nullptr, NOT_OP);
+        return new BinaryExp(operand, NULL, NOT_OP);
     }
+
     return parseCExp();
 }
 
@@ -660,20 +661,12 @@ Exp* Parser::parseFactor() {
     else if (match(Token::STRING)){
         return new StringLiteral(previous->text);
     }
-        // números negativos
+    // números negativos
     else if(match(Token::MINUS)){
         if(match(Token::NUM)) return new NumberExp(stoi(previous->text)* -1);
         cout << "Error, se esperaba un número negativo." << endl;
         exit(0);
     }
-    else if (match(Token::PI)) {
-        Exp* e = parseAExp();
-        if (!match(Token::PD)) {
-            cout << "Error: se esperaba ')' después de la expresión entre paréntesis." << endl;
-            exit(1);
-        }
-        return e;
-    }
-    cout << "Error: se esperaba un número, bool, string, identificador o expresión entre paréntesis." << endl;
+    cout << "Error: se esperaba un número, bool, string o identificador." << endl;
     exit(0);
 }

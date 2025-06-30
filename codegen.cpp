@@ -19,7 +19,7 @@ void GenCode::visit(FunDec* f) {
     offset = -8;
     nombreFuncion = f->nombre;
     std::vector<std::string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
-    //out << " .globl "<< f->nombre << std::endl;
+    out << " .globl "<< f->nombre << std::endl;
     out << f->nombre <<":" << std::endl;
     out << "    pushq %rbp\n";
     out << "    movq %rsp, %rbp\n";
@@ -322,15 +322,6 @@ ImpValue GenCode::visit(BinaryExp* exp) {
         out << "    subq $1, %rax\n";
         return ImpValue();
     }
-    if (exp->op == NOT_OP && exp->right == nullptr) {
-        exp->left->accept(this);
-        out <<
-            "    cmpq $0, %rax\n"
-            "    movl $0, %eax\n"
-            "    sete %al\n"
-            "    movzbq %al, %rax\n";
-        return ImpValue();
-    }
 
     exp->left->accept(this);
     out << "    pushq %rax\n";
@@ -397,6 +388,12 @@ ImpValue GenCode::visit(BinaryExp* exp) {
                    "    setne %dl\n"
                    "    movzbq %dl, %rdx\n"
                    "    orq %rdx, %rax\n";
+            break;
+        case NOT_OP:
+            out << "    cmpq $0, %rax\n"
+                   "    movl $0, %eax\n"
+                   "    sete %al\n"
+                   "    movzbq %al, %rax\n";
             break;
         default:
             break;

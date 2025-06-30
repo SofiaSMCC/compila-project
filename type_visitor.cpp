@@ -121,27 +121,16 @@ ImpValue TypeVisitor::visit(BinaryExp* exp) {
             }
             return ImpValue("bool", 0, result2, "");
 
-        case AND_OP: {
-            ImpValue left = exp->left->accept(this);
-            if (!left.bool_value) {
-                return ImpValue("bool", 0, false, "");
-            }
-            ImpValue right = exp->right->accept(this);
-            bool result2 = right.bool_value;
-            return ImpValue("bool", 0, result2, "");
-        }
-        case OR_OP: {
-            ImpValue left = exp->left->accept(this);
-            if (left.bool_value) {
-                return ImpValue("bool", 0, true, "");
-            }
-            ImpValue right = exp->right->accept(this);
-            bool result2 = right.bool_value;
-            return ImpValue("bool", 0, result2, "");
-        }
-        case NOT_OP: {
-            return ImpValue("bool", 0, !(left.bool_value), "");
-        }
+        case AND_OP:
+            result2 = left.bool_value && right.bool_value;
+            return ImpValue("bool", 0, result2, NULL);
+        case OR_OP:
+            result2 = left.bool_value || right.bool_value;
+            return ImpValue("bool", 0, result2, NULL);
+        case NOT_OP:
+            result2 = !left.bool_value;
+            return ImpValue("bool", 0, result2, NULL);
+
         default:
             cout << "Operador desconocido" << endl;
             return ImpValue();
@@ -251,6 +240,7 @@ void TypeVisitor::visit(AssignStatement* stm) {
 
 
 void TypeVisitor::visit(VarDec* vd) {
+    cout << "VARDEC" << endl;
     string t = ImpValue::get_basic_type(vd->type);
     if (t != "bool" && t != "int" && t != "string") {
         cout << "type error en declaración de variable" << endl;
@@ -286,24 +276,35 @@ void TypeVisitor::visit(VarDec* vd) {
 }
 
 void TypeVisitor::visit(VarDecList* vdl) {
+    cout << "vardeclist" << endl;
+
     for(auto i: vdl->vardecs){
         i->accept(this);
     }
 }
 
 void TypeVisitor::visit(PrintStatement* stm) {
-    ImpValue arg = stm->e->accept(this);
-    if (stm->format == "%s\n" && ImpValue::get_basic_type(arg.type) != "string") {
-        cout << "Error: printf espera string, pero se pasa " << arg.type << endl;
-        exit(0);
-    }
-    if (stm->format == "%d\n" && ImpValue::get_basic_type(arg.type) != "int") {
-        cout << "Error: printf espera int, pero se pasa " << arg.type << endl;
-        exit(0);
+    
+    for (Exp* e : stm->args) {
+        if (!e) {
+            cout << "Error: expresión nula en print" << endl;
+            exit(1);
+        }
+        ImpValue arg = e->accept(this);
+        if (stm->format == "%s\n" && ImpValue::get_basic_type(arg.type) != "string") {
+            cout << "Error: printf espera string, pero se pasa " << arg.type << endl;
+            exit(0);
+        }
+        if (stm->format == "%d\n" && ImpValue::get_basic_type(arg.type) != "int") {
+            cout << "Error: printf espera int, pero se pasa " << arg.type << endl;
+            exit(0);
+        }
     }
 }
 
+
 void TypeVisitor::visit(IfStatement* stm) {
+    cout << "IFSTATEMENT" << endl;
     for (auto ifexp : stm->sent_if) {
         if (ifexp->condi) {
             ImpValue cond = ifexp->condi->accept(this);
@@ -317,6 +318,7 @@ void TypeVisitor::visit(IfStatement* stm) {
 }
 
 void TypeVisitor::visit(WhileStatement* stm) {
+    cout << "WHILE STATEMENT" << endl;
     ImpValue cond = stm->condition->accept(this);
     if (ImpValue::get_basic_type(cond.type) != "bool") {
         cout << "Error: condición del while debe ser booleana" << endl;
@@ -328,6 +330,7 @@ void TypeVisitor::visit(WhileStatement* stm) {
 }
 
 void TypeVisitor::visit(DoWhileStatement* stm) {
+    cout << "DO WHILE STATEMENT" << endl;
     if (stm->b){
         stm->b->accept(this);
     }
@@ -339,18 +342,22 @@ void TypeVisitor::visit(DoWhileStatement* stm) {
 }
 
 void TypeVisitor::visit(ForStatement* stm) {
+    cout << "FORSTATEMENT" << endl;
     ImpValue rhs = stm->start->accept(this);
     if(rhs.type != stm->type) {
         cout << "Error en el type del for" << endl;
         exit(0);
     }
+    cout << "end for OFOFOFOFO" << endl;
     if (stm->type == "string") {
         cout << "No se puede declarar string dentro del for" << endl;
         exit(0);
     }
+    cout << "end of FOR" << endl;
 }
 
 void TypeVisitor::visit(ReturnStatement* stm) {
+    cout << "RETURN" << endl;
     if (stm->e) {
         ImpValue ret = stm->e->accept(this);
         if(ImpValue::get_basic_type(ret.type) != "int") {
@@ -361,10 +368,12 @@ void TypeVisitor::visit(ReturnStatement* stm) {
 }
 
 void TypeVisitor::visit(FCallStatement* stm) {
+    cout << "F CALL STATEMENT" << endl;
     stm->call->accept(this);
 }
 
 ImpValue TypeVisitor::visit(InitValue* iv) {
+    cout << "INIT VALUE" << endl;
     if (iv->isList) {
         for (auto val : iv->list) {
             ImpValue v = val->accept(this);
@@ -377,22 +386,28 @@ ImpValue TypeVisitor::visit(InitValue* iv) {
 }
 
 void TypeVisitor::visit(Var* var) {
+    cout << "VAR" << endl;
+    cout << "miau" << endl;
     cout<<var->id;
     cout<<"slo "<<var->iv->value;
+    cout << "miau" << endl;
 }
 
 void TypeVisitor::visit(StatementList* stm) {
+    cout << "STATEMENT LIST" << endl;
     for(auto i: stm->stms){
         i->accept(this);
     }
 }
 
 void TypeVisitor::visit(Body* b) {
+    cout << "BODY" << endl;
     if(b->vardecs) b->vardecs->accept(this);
     if(b->slist) b->slist->accept(this);
 }
 
 void TypeVisitor::visit(FunDec* fd) {
+    cout << "FUNDEC" << endl;
     env->add_level();
     for (size_t i = 0; i < fd->parametros.size(); ++i) {
         string nombre = fd->parametros[i];
@@ -406,6 +421,7 @@ void TypeVisitor::visit(FunDec* fd) {
 }
 
 void TypeVisitor::visit(FunDecList* fdl) {
+    cout << "FUNDECLIST" << endl;
     bool main=0;
     for(auto i: fdl->Fundecs){
        // if(fdl->Fundecs.back()->nombre!="main") {
