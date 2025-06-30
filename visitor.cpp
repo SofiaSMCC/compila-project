@@ -132,26 +132,23 @@ int Body::accept(Visitor *visitor) {
 // Exp
 
 ImpValue PrintVisitor::visit(BinaryExp* exp) {
-    // Operadores unarios disfrazados
-    if (exp->op == INC_OP) {
+    if (exp->op == NOT_OP && exp->right == nullptr) {
+        cout << "!";
+        cout << "(";
         exp->left->accept(this);
-        cout << "++";
-        return ImpValue();
-    } else if (exp->op == DEC_OP) {
-        exp->left->accept(this);
-        cout << "--";
+        cout << ")";
         return ImpValue();
     }
-
-    // Operadores binarios normales
-    cout << "(";
+    if ((exp->op == INC_OP || exp->op == DEC_OP) && exp->right == nullptr) {
+        exp->left->accept(this);
+        cout << Exp::binopToChar(exp->op);
+        return ImpValue();
+    }
     exp->left->accept(this);
     cout << " " << Exp::binopToChar(exp->op) << " ";
-    exp->right->accept(this);
-    cout << ")";
+    if (exp->right) exp->right->accept(this);
     return ImpValue();
 }
-
 
 ImpValue PrintVisitor::visit(NumberExp* exp) {
     cout << exp->value;
@@ -221,12 +218,11 @@ void PrintVisitor::visit(Program *program) {
 }
 
 void PrintVisitor::imprimir(Program* program){
-    cout << "imprimir" << endl;
+    //program->vdl->accept(this);
     program->func->accept(this);
 };
 
 void PrintVisitor::visit(AssignStatement* stm) {
-    //cout << "void PrintVisitor::visit(AssignStatement* stm) {" << endl;
     printIndent();
     stm->lvalue->accept(this);
     cout << " = ";
@@ -237,18 +233,13 @@ void PrintVisitor::visit(AssignStatement* stm) {
 void PrintVisitor::visit(PrintStatement* stm) {
     printIndent();
     cout << "printf(";
-    if (stm->format.front() != '"') cout << "\"";
+    if(stm->format.front() != '"') cout << "\"";
     cout << stm->format;
-    if (stm->format.back() != '"') cout << "\"";
-
-    for (size_t i = 0; i < stm->args.size(); ++i) {
-        cout << ", ";
-        stm->args[i]->accept(this);
-    }
-
+    if(stm->format.back() != '"') cout << "\"";
+    cout << ", ";
+    stm->e->accept(this);
     cout << ");" << endl;
 }
-
 
 void PrintVisitor::visit(IfStatement* stm) {
     size_t n = stm->sent_if.size();
