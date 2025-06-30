@@ -6,7 +6,7 @@
 #include "parser.h"
 
 using namespace std;
-
+string tipo_rt;
 Parser::~Parser() {}
 
 bool Parser::match(Token::Type ttype) {
@@ -105,6 +105,7 @@ FunDec* Parser::ParseFunDec() {
         exit(1);
     }
     type = current->text;
+    tipo_rt= type;
     advance();
 
     if (!match(Token::ID)) {
@@ -516,10 +517,25 @@ Stm* Parser::ParseStatement(){
         s = new DoWhileStatement(e, b);
     }
     else if (match(Token::RETURN)){
-        e = parseAExp();
-        if (!match(Token::PC)) {
-            cout << "Error: se esperaba un ';' al final del dowhile." << endl;
-            exit(1);
+        if(tipo_rt=="int" or tipo_rt=="bool" or tipo_rt=="string") {
+            if(current->text==";") {
+                cout << "Error: se esperaba un valor de retorno en función de tipo " << tipo_rt << endl;
+                exit(1);
+            }
+            e = parseAExp();
+            if (!match(Token::PC)) {
+                cout << "Error de tipos" << endl;
+                exit(1);
+            }
+
+        }
+        else if (tipo_rt=="void") {
+            e=nullptr;
+            if(current->text!=";") {
+                cout << "Error: función void no debe retornar valor." << endl;
+                exit(1);
+            }
+            match(Token::PC);
         }
         s = new ReturnStatement(e);
     }

@@ -339,7 +339,7 @@ void PrintVisitor::visit(StatementList* stm) {
 void PrintVisitor::visit(ReturnStatement* stm) {
     printIndent();
     cout << "return ";
-    stm->e->accept(this);
+     if (stm->e) {stm->e->accept(this);}
     cout << ";" << endl;
 }
 

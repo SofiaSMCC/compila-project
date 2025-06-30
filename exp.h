@@ -213,6 +213,7 @@ public:
 
 class ReturnStatement: public Stm {
 public:
+    string type;
     Exp* e;
     ReturnStatement(Exp* e);
     ~ReturnStatement();

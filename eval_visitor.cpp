@@ -338,8 +338,10 @@ void EVALVisitor::visit(DoWhileStatement *stm) {
 }
 
 void EVALVisitor::visit(ReturnStatement *stm) {
-    this->return_value = stm->e->accept(this);
-    this->return_encountered = true;
+     if (stm->e) {
+        this->return_value = stm->e->accept(this);
+        this->return_encountered = true;
+    }
 }
 
 void EVALVisitor::visit(WhileStatement *stm) {

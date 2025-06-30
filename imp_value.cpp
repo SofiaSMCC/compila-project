@@ -10,6 +10,7 @@ ImpValue::~ImpValue() {}
 #include <cctype>
 
 string ImpValue::get_basic_type(string s) {
+
     while(!s.empty() && isspace(s.front())) s.erase(s.begin());
     while(!s.empty() && isspace(s.back())) s.pop_back();
 

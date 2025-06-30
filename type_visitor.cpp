@@ -1,8 +1,20 @@
 #ifndef TYPE_VISITOR_H
 #define TYPE_VISITOR_H
-
 #include "type_visitor.h"
-
+string tiport;
+bool InitValueType(InitValue* iv, const std::string& expectedType, TypeVisitor* visitor) {
+    if (iv->isList) {
+        for (auto elem : iv->list) {
+            if (!InitValueType(elem, expectedType, visitor))
+                return false;
+        }
+        return true;
+    } else if (iv->value) {
+        string t = iv->value->accept(visitor).type;
+        return t == expectedType;
+    }
+    return false;
+}
 ///////////////////////////////////////////////////////////////////////////////////
 
 //0 = undefined
@@ -228,18 +240,24 @@ void TypeVisitor::visit(AssignStatement* stm) {
 
 
 void TypeVisitor::visit(VarDec* vd) {
-    std::string t = ImpValue::get_basic_type(vd->type);
+    string t = ImpValue::get_basic_type(vd->type);
     if (t != "bool" && t != "int" && t != "string") {
         cout << "type error en declaración de variable" << endl;
         exit(0);
     }
     for (auto i : vd->vars) {
         if (!i->dimList.empty()) {
-            std::vector<int> dims;
+            vector<int> dims;
             for (auto nexp : i->dimList) {
                 dims.push_back(nexp->value);
+                if(!InitValueType(i->iv,t,this)) {
+                    cout << "Error de tipo en inicialización de array: '" << i->id
+                     << "'. Elemento no es de tipo '" << t << "'" << endl;
+                    exit(1);
+                }
+
             }
-            std::vector<int> idxs;
+            vector<int> idxs;
             declara_array_type(i->id, dims, 0, idxs, t, env);
         } else if (i->iv) {
             ImpValue valor_init = i->iv->accept(this);
@@ -248,7 +266,9 @@ void TypeVisitor::visit(VarDec* vd) {
                 exit(0);
             }
             env->add_var(i->id, t);
-        } else {
+        }
+
+        else {
             env->add_var(i->id, t);
         }
     }
@@ -320,10 +340,12 @@ void TypeVisitor::visit(ForStatement* stm) {
 }
 
 void TypeVisitor::visit(ReturnStatement* stm) {
-    ImpValue ret = stm->e->accept(this);
-    if(ImpValue::get_basic_type(ret.type) != "int") {
-        cout << "Error: return debe ser int" << endl;
-        exit(0);
+    if (stm->e) {
+        ImpValue ret = stm->e->accept(this);
+        if(ImpValue::get_basic_type(ret.type) != "int") {
+            cout << "Error: return debe ser int" << endl;
+            exit(0);
+        }
     }
 }
 
@@ -335,6 +357,7 @@ ImpValue TypeVisitor::visit(InitValue* iv) {
     if (iv->isList) {
         for (auto val : iv->list) {
             ImpValue v = val->accept(this);
+
         }
         if (!iv->list.empty()) return iv->list[0]->accept(this);
         else return ImpValue();
@@ -372,8 +395,20 @@ void TypeVisitor::visit(FunDec* fd) {
 }
 
 void TypeVisitor::visit(FunDecList* fdl) {
+    bool main=0;
     for(auto i: fdl->Fundecs){
+       // if(fdl->Fundecs.back()->nombre!="main") {
+       // //   cout<<"ERROR: falta funcion main";
+       // // exit(1);
+        //}
+        if(i->nombre=="main") {
+            main=1;
+        }
         i->accept(this);
+    }
+    if(!main) {
+        cout<<"ERROR: falta funcion main";
+        exit(1);
     }
 }
 
