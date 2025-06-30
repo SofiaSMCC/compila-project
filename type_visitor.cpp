@@ -108,40 +108,59 @@ ImpValue TypeVisitor::visit(BinaryExp* exp) {
                 result1 = 0;
             }
             return ImpValue("int", result1, false, "");
-
-        case LT_OP:
+        case LT_OP:      // <
             result2 = left.int_value < right.int_value;
             return ImpValue("bool", 0, result2, "");
-
-        case EQ_OP:
+        case LET_OP:     // <=
+            result2 = left.int_value <= right.int_value;
+            return ImpValue("bool", 0, result2, "");
+        case GT_OP:      // >
+            result2 = left.int_value > right.int_value;
+            return ImpValue("bool", 0, result2, "");
+        case GET_OP:     // >=
+            result2 = left.int_value >= right.int_value;
+            return ImpValue("bool", 0, result2, "");
+        case EQ_OP:      // ==
             if (left.type == "int" && right.type == "int") {
                 result2 = left.int_value == right.int_value;
-            } else {
+            } else if (left.type == "bool" && right.type == "bool") {
                 result2 = left.bool_value == right.bool_value;
+            } else if (left.type == "string" && right.type == "string") {
+                result2 = left.string_value == right.string_value;
+            } else {
+                cout << "Error: comparación == entre tipos incompatibles" << endl;
+                exit(1);
+            }
+            return ImpValue("bool", 0, result2, "");
+        case DIFF_OP:    // !=
+            if (left.type == "int" && right.type == "int") {
+                result2 = left.int_value != right.int_value;
+            } else if (left.type == "bool" && right.type == "bool") {
+                result2 = left.bool_value != right.bool_value;
+            } else if (left.type == "string" && right.type == "string") {
+                result2 = left.string_value != right.string_value;
+            } else {
+                cout << "Error: comparación != entre tipos incompatibles" << endl;
+                exit(1);
             }
             return ImpValue("bool", 0, result2, "");
         case AND_OP: {
-            ImpValue left = exp->left->accept(this);
             if (!left.bool_value) {
                 return ImpValue("bool", 0, false, "");
             }
-            ImpValue right = exp->right->accept(this);
             bool result2 = right.bool_value;
             return ImpValue("bool", 0, result2, "");
         }
         case OR_OP: {
-            ImpValue left = exp->left->accept(this);
             if (left.bool_value) {
                 return ImpValue("bool", 0, true, "");
             }
-            ImpValue right = exp->right->accept(this);
             bool result2 = right.bool_value;
             return ImpValue("bool", 0, result2, "");
         }
         case NOT_OP: {
             return ImpValue("bool", 0, !(left.bool_value), "");
         }
-
         default:
             cout << "Operador desconocido" << endl;
             return ImpValue();
