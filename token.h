@@ -16,7 +16,8 @@ public:
         FOR, WHILE, IF, ELSEIF, ELSE, DO, PRINTF, RETURN,
         AND, OR, PLUS, MINUS, MUL, DIV, NOT, DPLUS, DMINUS,
         TRUE, FALSE, INT, STRING, NUM, BOOLEAN,
-        ERR, END
+        ERR, END,
+        VOID
     };
 
     // LLI, LLD - llave izquierda, llave derecha

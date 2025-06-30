@@ -9,6 +9,31 @@
 //1 = int
 //2 = bool
 
+void declara_array_type(
+        const std::string& base,
+        const std::vector<int>& dims,
+        size_t dim,
+        std::vector<int>& idxs,
+        const std::string& tipo,
+        Environment* env
+) {
+    if (dim == dims.size()) {
+        std::string nombre = base + "[";
+        for (size_t i = 0; i < idxs.size(); ++i) {
+            nombre += std::to_string(idxs[i]);
+            if (i + 1 < idxs.size()) nombre += ",";
+        }
+        nombre += "]";
+        env->add_var(nombre, tipo);
+        return;
+    }
+    for (int i = 0; i < dims[dim]; ++i) {
+        idxs.push_back(i);
+        declara_array_type(base, dims, dim + 1, idxs, tipo, env);
+        idxs.pop_back();
+    }
+}
+
 void TypeVisitor::check(Program* program){
     for (FunDec* f : program->func->Fundecs) {
         funciones[f->nombre] = f;
@@ -101,12 +126,33 @@ ImpValue TypeVisitor::visit(BinaryExp* exp) {
 }
 
 ImpValue TypeVisitor::visit(ArrayAccessExp* exp) {
-    return ImpValue();
+    string nombre = exp->arrayName + "[";
+    for (size_t i = 0; i < exp->indices.size(); ++i) {
+        ImpValue idxVal = exp->indices[i]->accept(this);
+        if (ImpValue::get_basic_type(idxVal.type) != "int") {
+            cout << "Error: índice de array debe ser int" << endl;
+            exit(0);
+        }
+        int idx = idxVal.int_value;
+        nombre += to_string(idx);
+        if (i + 1 < exp->indices.size()) nombre += ",";
+    }
+    nombre += "]";
+    string t = env->lookup_type(nombre);
+    return ImpValue(t, 0, false, "");
 }
 
 ImpValue TypeVisitor::visit(IFExp* exp) {
+    if (exp->condi) {
+        ImpValue cond = exp->condi->accept(this);
+        if (ImpValue::get_basic_type(cond.type) != "bool") {
+            cout << "Error: condición del if debe ser booleana" << endl;
+            exit(0);
+        }
+    }
     return ImpValue();
 }
+
 
 ImpValue TypeVisitor::visit(FCallExp* exp) {
     if (funciones.count(exp->nombre) == 0) {
@@ -133,15 +179,46 @@ ImpValue TypeVisitor::visit(FCallExp* exp) {
 }
 
 ImpValue TypeVisitor::visit(LValue* exp) {
-    return ImpValue(env->lookup_type(exp->id), 0, false, "");
+    string nombre = exp->id;
+    if (!exp->indices.empty()) {
+        nombre += "[";
+        for (size_t i = 0; i < exp->indices.size(); ++i) {
+            ImpValue idxVal = exp->indices[i]->accept(this);
+            if (ImpValue::get_basic_type(idxVal.type) != "int") {
+                cout << "Error: índice de array debe ser int" << endl;
+                exit(0);
+            }
+            int idx = idxVal.int_value;
+            nombre += to_string(idx);
+            if (i + 1 < exp->indices.size()) nombre += ",";
+        }
+        nombre += "]";
+    }
+    string t = env->lookup_type(nombre);
+    return ImpValue(t, 0, false, "");
 }
 
 // Statements
 
 void TypeVisitor::visit(AssignStatement* stm) {
-    string tipo_variable = env->lookup_type(stm->lvalue->id);
+    // Soporta variables y arrays
+    string nombre = stm->lvalue->id;
+    if (!stm->lvalue->indices.empty()) {
+        nombre += "[";
+        for (size_t i = 0; i < stm->lvalue->indices.size(); ++i) {
+            ImpValue idxVal = stm->lvalue->indices[i]->accept(this);
+            if (ImpValue::get_basic_type(idxVal.type) != "int") {
+                cout << "Error: índice de array debe ser int" << endl;
+                exit(0);
+            }
+            int idx = idxVal.int_value;
+            nombre += to_string(idx);
+            if (i + 1 < stm->lvalue->indices.size()) nombre += ",";
+        }
+        nombre += "]";
+    }
+    string tipo_variable = env->lookup_type(nombre);
     ImpValue rhs_value = stm->rhs->accept(this);
-
     if (ImpValue::get_basic_type(rhs_value.type) != ImpValue::get_basic_type(tipo_variable)) {
         cout << "Error de tipos: se esperaba " << tipo_variable
              << " pero se encontró " << rhs_value.type << endl;
@@ -149,32 +226,31 @@ void TypeVisitor::visit(AssignStatement* stm) {
     }
 }
 
+
 void TypeVisitor::visit(VarDec* vd) {
     std::string t = ImpValue::get_basic_type(vd->type);
     if (t != "bool" && t != "int" && t != "string") {
         cout << "type error en declaración de variable" << endl;
         exit(0);
     }
-
-    for(auto i: vd->vars){
-        if (!i->dimList.empty() && i->iv) {
-            cout << "array";
-            for (int in = 0; in < i->iv->list.size(); in++) {
-                int val = i->iv->list[in]->value->accept(this).int_value;
-                cout << " D: " << val;
-                env->add_var(i->id, val, t); // Aquí probablemente también debas diferenciar por índice
+    for (auto i : vd->vars) {
+        if (!i->dimList.empty()) {
+            std::vector<int> dims;
+            for (auto nexp : i->dimList) {
+                dims.push_back(nexp->value);
             }
-        }
-
-        else if(i->iv){
+            std::vector<int> idxs;
+            declara_array_type(i->id, dims, 0, idxs, t, env);
+        } else if (i->iv) {
             ImpValue valor_init = i->iv->accept(this);
-            if(ImpValue::get_basic_type(valor_init.type) != t){
+            if (ImpValue::get_basic_type(valor_init.type) != t) {
                 cout << "Error de tipo en inicialización de variable: " << i->id << endl;
                 exit(0);
             }
             env->add_var(i->id, t);
+        } else {
+            env->add_var(i->id, t);
         }
-
     }
 }
 
@@ -186,8 +262,12 @@ void TypeVisitor::visit(VarDecList* vdl) {
 
 void TypeVisitor::visit(PrintStatement* stm) {
     ImpValue arg = stm->e->accept(this);
-    if(stm->format == "%s\n" && ImpValue::get_basic_type(arg.type) != "string"){
+    if (stm->format == "%s\n" && ImpValue::get_basic_type(arg.type) != "string") {
         cout << "Error: printf espera string, pero se pasa " << arg.type << endl;
+        exit(0);
+    }
+    if (stm->format == "%d\n" && ImpValue::get_basic_type(arg.type) != "int") {
+        cout << "Error: printf espera int, pero se pasa " << arg.type << endl;
         exit(0);
     }
 }
@@ -211,11 +291,15 @@ void TypeVisitor::visit(WhileStatement* stm) {
         cout << "Error: condición del while debe ser booleana" << endl;
         exit(0);
     }
-    if (stm->b) stm->b->accept(this);
+    if (stm->b){
+        stm->b->accept(this);
+    }
 }
 
 void TypeVisitor::visit(DoWhileStatement* stm) {
-    if (stm->b) stm->b->accept(this);
+    if (stm->b){
+        stm->b->accept(this);
+    }
     ImpValue cond = stm->condition->accept(this);
     if (ImpValue::get_basic_type(cond.type) != "bool") {
         cout << "Error: condición del do-while debe ser booleana" << endl;
@@ -224,12 +308,12 @@ void TypeVisitor::visit(DoWhileStatement* stm) {
 }
 
 void TypeVisitor::visit(ForStatement* stm) {
-    ImpValue rhs=stm->start->accept(this);
-    if(rhs.type!=stm->type) {
+    ImpValue rhs = stm->start->accept(this);
+    if(rhs.type != stm->type) {
         cout << "Error en el type del for" << endl;
         exit(0);
     }
-    if (stm->type=="string") {
+    if (stm->type == "string") {
         cout << "No se puede declarar string dentro del for" << endl;
         exit(0);
     }
@@ -244,9 +328,17 @@ void TypeVisitor::visit(ReturnStatement* stm) {
 }
 
 void TypeVisitor::visit(FCallStatement* stm) {
+    stm->call->accept(this);
 }
 
 ImpValue TypeVisitor::visit(InitValue* iv) {
+    if (iv->isList) {
+        for (auto val : iv->list) {
+            ImpValue v = val->accept(this);
+        }
+        if (!iv->list.empty()) return iv->list[0]->accept(this);
+        else return ImpValue();
+    }
     return iv->value->accept(this);
 }
 
@@ -273,7 +365,9 @@ void TypeVisitor::visit(FunDec* fd) {
         string tipo = fd->tipos[i];
         env->add_var(nombre, tipo);
     }
-    if(fd->cuerpo) fd->cuerpo->accept(this);
+    if(fd->cuerpo){
+        fd->cuerpo->accept(this);
+    }
     env->remove_level();
 }
 

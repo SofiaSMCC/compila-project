@@ -119,6 +119,10 @@ public:
     ~PrintStatement();
 };
 
+inline bool isString(Exp* e) {
+    return dynamic_cast<StringLiteral*>(e) != nullptr;
+}
+
 class IFExp : public Exp {
 public:
     Exp *condi;

@@ -46,6 +46,7 @@ Token* Scanner::nextToken() {
 
         if (word == "for") token = new Token(Token::FOR, word, 0, word.length());
         else if (word == "if") token = new Token(Token::IF, word, 0, word.length());
+        else if (word == "void") token = new Token(Token::VOID, word, 0, word.length());
         else if (word == "while") token = new Token(Token::WHILE, word, 0, word.length());
         else if (word == "do") token = new Token(Token::DO, word, 0, word.length());
         else if (word == "printf") token = new Token(Token::PRINTF, word, 0, word.length());

@@ -32,8 +32,9 @@ void GenCode::visit(FunDec* f) {
         offset -= 8;
     }
 
-    if (f->cuerpo->vardecs)
+    if (f->cuerpo->vardecs){
         f->cuerpo->vardecs->accept(this);
+    }
 
     int reserva = -offset;
     if (reserva>0) {
@@ -43,11 +44,18 @@ void GenCode::visit(FunDec* f) {
     if (f->cuerpo->vardecs) {
         for (auto vd : f->cuerpo->vardecs->vardecs) {
             for (auto var : vd->vars) {
-                if (var->iv && var->iv->value) {
-                    var->iv->value->accept(this);
-                    out << "    movq %rax, " << memoria[var->id] << "(%rbp)\n";
+                if (!var->dimList.empty()) {
+                    int size = (*var->dimList.begin())->value;
+                    for (int idx = 0; idx < size; ++idx) {
+                        out << "    movq $0, " << (memoria[var->id] + idx * 8) << "(%rbp)\n";
+                    }
                 } else {
-                    out << "    movq $0, " << memoria[var->id] << "(%rbp)\n";
+                    if (var->iv && var->iv->value) {
+                        var->iv->value->accept(this);
+                        out << "    movq %rax, " << memoria[var->id] << "(%rbp)\n";
+                    } else {
+                        out << "    movq $0, " << memoria[var->id] << "(%rbp)\n";
+                    }
                 }
             }
         }
@@ -64,13 +72,18 @@ void GenCode::visit(FunDec* f) {
 
 void GenCode::visit(VarDec* stm) {
     for (auto var : stm->vars) {
-        if (memoria.count(var->id) == 0)  {
+        if (!var->dimList.empty()) {
+            int size = (*var->dimList.begin())->value;
             memoria[var->id] = offset;
-            offset -= 8;
+            offset -= size * 8;
+        } else {
+            if (memoria.count(var->id) == 0)  {
+                memoria[var->id] = offset;
+                offset -= 8;
+            }
         }
     }
 }
-
 void GenCode::visit(Body* b) {
     if (b->vardecs){
         b->vardecs->accept(this);
@@ -93,8 +106,15 @@ void GenCode::visit(StatementList* stm) {
 }
 
 void GenCode::visit(AssignStatement* stm) {
-    stm->rhs->accept(this);
-    out << "    movq %rax, " << memoria[stm->lvalue->id] << "(%rbp)\n";
+    if (!stm->lvalue->indices.empty()) {
+        stm->lvalue->indices[0]->accept(this);
+        out << "    movq %rax, %rcx\n";
+        stm->rhs->accept(this);
+        out << "    movq %rax, " << memoria[stm->lvalue->id] << "(%rbp, %rcx, 8)\n";
+    } else {
+        stm->rhs->accept(this);
+        out << "    movq %rax, " << memoria[stm->lvalue->id] << "(%rbp)\n";
+    }
 }
 
 void GenCode::visit(PrintStatement* stm) {
@@ -113,7 +133,20 @@ void GenCode::visit(ReturnStatement* stm) {
 
 void GenCode::visit(Var *v) {}
 
-void GenCode::visit(WhileStatement *stmt) {}
+void GenCode::visit(WhileStatement *stmt) {
+    int start_label = labelcont++;
+    int end_label = labelcont++;
+
+    out << "while_" << start_label << ":\n";
+    stmt->condition->accept(this);
+    out << "    cmpq $0, %rax\n";
+    out << "    je endw_" << end_label << "\n";
+
+    stmt->b->accept(this);
+
+    out << "    jmp while_" << start_label << "\n";
+    out << "endw_" << end_label << ":\n";
+}
 
 void GenCode::visit(IfStatement *stmt) {
     int endif_label = labelcont++;
@@ -175,9 +208,18 @@ void GenCode::visit(ForStatement *stmt) {
     out << "endfor_" << end_label << ":\n";
 }
 
-void GenCode::visit(FCallStatement *stm) {}
+void GenCode::visit(FCallStatement *stm) {
+    stm->call->accept(this);
+}
 
-void GenCode::visit(DoWhileStatement *stm) {}
+void GenCode::visit(DoWhileStatement *stm) {
+    int start_label = labelcont++;
+    out << "dowhile_" << start_label << ":\n";
+    stm->b->accept(this);
+    stm->condition->accept(this);
+    out << "    cmpq $0, %rax\n";
+    out << "    jne dowhile_" << start_label << "\n";
+}
 
 void GenCode::visit(FunDecList *fdl) {
     for (auto f : fdl->Fundecs)
@@ -191,16 +233,33 @@ ImpValue GenCode::visit(StringLiteral *exp) {
 }
 
 ImpValue GenCode::visit(BoolExp *exp) {
+    out << "    movq $" << (exp->value ? 1 : 0) << ", %rax\n";
     return ImpValue();
 }
+
 
 ImpValue GenCode::visit(ArrayAccessExp *exp) {
+    // Unidimensional
+    exp->indices[0]->accept(this);
+    out << "    movq %rax, %rdx\n";
+    out << "    movq " << memoria[exp->arrayName] << "(%rbp, %rdx, 8), %rax\n";
     return ImpValue();
 }
 
-ImpValue GenCode::visit(IFExp *exp) {return ImpValue();}
+ImpValue GenCode::visit(IFExp *exp) {
+    return ImpValue();
+}
 
-ImpValue GenCode::visit(LValue *exp) {return ImpValue();}
+ImpValue GenCode::visit(LValue *exp) {
+    if (exp->indices.empty()) {
+        out << "    movq " << memoria[exp->id] << "(%rbp), %rax\n";
+    } else {
+        exp->indices[0]->accept(this);
+        out << "    movq %rax, %rdx\n";
+        out << "    movq " << memoria[exp->id] << "(%rbp, %rdx, 8), %rax\n";
+    }
+    return ImpValue();
+}
 
 ImpValue GenCode::visit(FCallExp* exp) {
     int nargs = exp->argumentos.size();
@@ -243,51 +302,51 @@ ImpValue GenCode::visit(BinaryExp* exp) {
     exp->left->accept(this);
     out << "    pushq %rax\n";
     exp->right->accept(this);
-    out << "    movq %rax, %rcx\n";
+    out << "    movq %rax, %rdx\n";
     out << "    popq %rax\n";
     switch (exp->op) {
         case PLUS_OP:
-            out << "    addq %rcx, %rax\n"; break;
+            out << "    addq %rdx, %rax\n"; break;
         case MINUS_OP:
-            out << "    subq %rcx, %rax\n"; break;
+            out << "    subq %rdx, %rax\n"; break;
         case MUL_OP:
-            out << "    imulq %rcx, %rax\n"; break;
+            out << "    imulq %rdx, %rax\n"; break;
         case DIV_OP:
             out << "    cqto\n";
-            out << "    idivq %rcx\n";
+            out << "    idivq %rdx\n";
             break;
         case LT_OP:
-            out << "    cmpq %rcx, %rax\n"
+            out << "    cmpq %rdx, %rax\n"
                    "    movl $0, %eax\n"
                    "    setl %al\n"
                    "    movzbq %al, %rax\n";
             break;
         case LET_OP:
-            out << "    cmpq %rcx, %rax\n"
+            out << "    cmpq %rdx, %rax\n"
                    "    movl $0, %eax\n"
                    "    setle %al\n"
                    "    movzbq %al, %rax\n";
             break;
         case GT_OP:
-            out << "    cmpq %rcx, %rax\n"
+            out << "    cmpq %rdx, %rax\n"
                    "    movl $0, %eax\n"
                    "    setg %al\n"
                    "    movzbq %al, %rax\n";
             break;
         case GET_OP:
-            out << "    cmpq %rcx, %rax\n"
+            out << "    cmpq %rdx, %rax\n"
                    "    movl $0, %eax\n"
                    "    setge %al\n"
                    "    movzbq %al, %rax\n";
             break;
         case EQ_OP:
-            out << "    cmpq %rcx, %rax\n"
+            out << "    cmpq %rdx, %rax\n"
                    "    movl $0, %eax\n"
                    "    sete %al\n"
                    "    movzbq %al, %rax\n";
             break;
         case DIFF_OP:
-            out << "    cmpq %rcx, %rax\n"
+            out << "    cmpq %rdx, %rax\n"
                    "    movl $0, %eax\n"
                    "    setne %al\n"
                    "    movzbq %al, %rax\n";
@@ -295,16 +354,16 @@ ImpValue GenCode::visit(BinaryExp* exp) {
         case AND_OP:
             out << "    setne %al\n"
                    "    movzbq %al, %rax\n"
-                   "    setne %cl\n"
-                   "    movzbq %cl, %rcx\n"
-                   "    andq %rcx, %rax\n";
+                   "    setne %dl\n"
+                   "    movzbq %dl, %rdx\n"
+                   "    andq %rdx, %rax\n";
             break;
         case OR_OP:
             out << "    setne %al\n"
                    "    movzbq %al, %rax\n"
-                   "    setne %cl\n"
-                   "    movzbq %cl, %rcx\n"
-                   "    orq %rcx, %rax\n";
+                   "    setne %dl\n"
+                   "    movzbq %dl, %rdx\n"
+                   "    orq %rdx, %rax\n";
             break;
         case NOT_OP:
             out << "    cmpq $0, %rax\n"

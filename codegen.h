@@ -8,6 +8,12 @@ class GenCode : public Visitor {
 private:
     std::ostream& out;
     unordered_map<string, int> memoria;
+    // para arrays
+    unordered_map<string, int> tamaniosArray; // total elementos
+    unordered_map<string, vector<int>> dimsArray;// dimensiones
+    // para strings
+    int stringLiteralCount = 0;
+    vector<string> stringLiterals;
     int offset = -8;
     int labelcont = 0;
     bool entornoFuncion = false;

@@ -1,6 +1,6 @@
 #include "eval_visitor.h"
-
 #include <token.h>
+
 void recolectaValores(InitValue* iv, vector<ImpValue>& valores, EVALVisitor* visitor) {
     if (iv->isList) {
         for (auto elem : iv->list) {
@@ -8,6 +8,42 @@ void recolectaValores(InitValue* iv, vector<ImpValue>& valores, EVALVisitor* vis
         }
     } else if (iv->value) {
         valores.push_back(iv->value->accept(visitor));
+    }
+}
+
+void declara_array_eval(
+        const std::string& base,
+        const std::vector<int>& dims,
+        size_t dim,
+        std::vector<int>& idxs,
+        const std::string& tipo,
+        Environment& env,
+        const std::vector<ImpValue>& valores,
+        size_t& valor_idx
+) {
+    if (dim == dims.size()) {
+        std::string nombre = base + "[";
+        for (size_t i = 0; i < idxs.size(); ++i) {
+            nombre += std::to_string(idxs[i]);
+            if (i + 1 < idxs.size()) nombre += ",";
+        }
+        nombre += "]";
+        if (valor_idx < valores.size()) {
+            if (tipo == "int")
+                env.add_var(nombre, valores[valor_idx++].int_value, tipo);
+            else if (tipo == "bool")
+                env.add_var(nombre, valores[valor_idx++].bool_value ? 1 : 0, tipo);
+            else if (tipo == "string")
+                env.add_var(nombre, valores[valor_idx++].string_value, tipo);
+        } else {
+            env.add_var(nombre, tipo);
+        }
+        return;
+    }
+    for (int i = 0; i < dims[dim]; ++i) {
+        idxs.push_back(i);
+        declara_array_eval(base, dims, dim + 1, idxs, tipo, env, valores, valor_idx);
+        idxs.pop_back();
     }
 }
 
@@ -129,6 +165,40 @@ ImpValue EVALVisitor::visit(IdentifierExp *exp) {
 }
 
 ImpValue EVALVisitor::visit(LValue *exp) {
+    // Si no es array, accede normal
+    if (exp->indices.empty()) {
+        string t = env.lookup_type(exp->id);
+        if (t == "int") {
+            int n = env.lookup(exp->id).first;
+            return ImpValue(t, n, false, "");
+        } else if (t == "bool") {
+            bool v = env.lookup(exp->id).first;
+            return ImpValue(t, 0, v, "");
+        } else if (t == "string") {
+            string s = env.lookup(exp->id).second;
+            return ImpValue(t, 0, false, s);
+        }
+    } else {
+        // Soporte para arrays: nombre[i] -> "nombre[0]", etc.
+        string nombre = exp->id + "[";
+        for (size_t i = 0; i < exp->indices.size(); ++i) {
+            int idx = exp->indices[i]->accept(this).int_value;
+            nombre += to_string(idx);
+            if (i + 1 < exp->indices.size()) nombre += ",";
+        }
+        nombre += "]";
+        string t = env.lookup_type(nombre);
+        if (t == "int") {
+            int n = env.lookup(nombre).first;
+            return ImpValue(t, n, false, "");
+        } else if (t == "bool") {
+            bool v = env.lookup(nombre).first;
+            return ImpValue(t, 0, v, "");
+        } else if (t == "string") {
+            string s = env.lookup(nombre).second;
+            return ImpValue(t, 0, false, s);
+        }
+    }
     return ImpValue();
 }
 
@@ -173,6 +243,26 @@ ImpValue EVALVisitor::visit(FCallExp *exp) {
 }
 
 ImpValue EVALVisitor::visit(ArrayAccessExp *exp) {
+    // Construir el nombre tipo "matriz[2,5]"
+    string nombre = exp->arrayName + "[";
+    for (size_t i = 0; i < exp->indices.size(); ++i) {
+        int idx = exp->indices[i]->accept(this).int_value;
+        nombre += to_string(idx);
+        if (i + 1 < exp->indices.size()) nombre += ",";
+    }
+    nombre += "]";
+
+    string t = env.lookup_type(nombre);
+    if (t == "int") {
+        int n = env.lookup(nombre).first;
+        return ImpValue(t, n, false, "");
+    } else if (t == "bool") {
+        bool v = env.lookup(nombre).first;
+        return ImpValue(t, 0, v, "");
+    } else if (t == "string") {
+        string s = env.lookup(nombre).second;
+        return ImpValue(t, 0, false, s);
+    }
     return ImpValue();
 }
 
@@ -183,20 +273,31 @@ ImpValue EVALVisitor::visit(InitValue *iv) {
 // Statement
 
 void EVALVisitor::visit(AssignStatement *stm) {
-    string t = env.lookup_type(stm->lvalue->id); //tipo
+    string var_name;
+    // Si el LValue es array
+    if (!stm->lvalue->indices.empty()) {
+        var_name = stm->lvalue->id + "[";
+        for (size_t i = 0; i < stm->lvalue->indices.size(); ++i) {
+            int idx = stm->lvalue->indices[i]->accept(this).int_value;
+            var_name += to_string(idx);
+            if (i + 1 < stm->lvalue->indices.size()) var_name += ",";
+        }
+        var_name += "]";
+    } else {
+        var_name = stm->lvalue->id;
+    }
+
+    string t = env.lookup_type(var_name);
     ImpValue val = stm->rhs->accept(this);
 
-    if (t=="bool") {
-        env.update(stm->lvalue->id, val.bool_value);
-    }
-    else if (t=="int") {
-        env.update(stm->lvalue->id, val.int_value);
-    }
-    else if (t=="string") {
-        env.update(stm->lvalue->id,val.string_value);
+    if (t == "bool") {
+        env.update(var_name, val.bool_value ? 1 : 0);
+    } else if (t == "int") {
+        env.update(var_name, val.int_value);
+    } else if (t == "string") {
+        env.update(var_name, val.string_value);
     }
 }
-
 void EVALVisitor::visit(IfStatement *stm) {
     for (auto stms : stm->sent_if) {
         if (!stms->condi || stms->condi->accept(this).bool_value) {
@@ -242,8 +343,11 @@ void EVALVisitor::visit(ReturnStatement *stm) {
 }
 
 void EVALVisitor::visit(WhileStatement *stm) {
-    if(stm->condition->accept(this).bool_value) {
+    while (stm->condition->accept(this).bool_value) {
         stm->b->accept(this);
+        if (this->return_encountered){
+            break;
+        }
     }
 }
 
@@ -267,6 +371,7 @@ void EVALVisitor::visit(PrintStatement *stm) {
 }
 
 void EVALVisitor::visit(FCallStatement *stm) {
+    ImpValue unused = stm->call->accept(this);
 }
 
 void EVALVisitor::visit(VarDecList *stm) {
@@ -293,30 +398,22 @@ void EVALVisitor::visit(Body *b) {
     if (b->slist) b->slist->accept(this);
 }
 
-
-
 void EVALVisitor::visit(VarDec *stm) {
-    for(auto i: stm->vars){
-        // Caso array
-        if (!i->dimList.empty() && i->iv && i->iv->isList) {
-            vector<ImpValue> valores;
-            recolectaValores(i->iv, valores, this);
-
-            for (size_t idx = 0; idx < valores.size(); ++idx) {
-                string nombre = i->id + "[" + to_string(idx) + "]";
-                if (stm->type == "int") {
-                    env.add_var(nombre, valores[idx].int_value, stm->type);
-                } else if (stm->type == "bool") {
-                    env.add_var(nombre, valores[idx].bool_value ? 1 : 0, stm->type);
-                } else if (stm->type == "string") {
-                    env.add_var(nombre, valores[idx].string_value, stm->type);
-                }
-                //cout << "Guardado " << nombre << " = ";
-                //if (stm->type == "int") std::cout << valores[idx].int_value;
-                //else if (stm->type == "bool") std::cout << (valores[idx].bool_value ? "true" : "false");
-                //else std::cout << valores[idx].string_value;
-                //cout << std::endl;
+    for (auto i : stm->vars) {
+        // Si es array multidimensional
+        if (!i->dimList.empty()) {
+            // Calcula las dimensiones
+            std::vector<int> dims;
+            for (auto nexp : i->dimList) {
+                dims.push_back(nexp->value);
             }
+            std::vector<ImpValue> valores;
+            if (i->iv && i->iv->isList) {
+                recolectaValores(i->iv, valores, this);
+            }
+            std::vector<int> idxs;
+            size_t valor_idx = 0;
+            declara_array_eval(i->id, dims, 0, idxs, stm->type, env, valores, valor_idx);
         }
         // Caso variable simple (no array)
         else if (i->iv) {
@@ -329,7 +426,7 @@ void EVALVisitor::visit(VarDec *stm) {
                 env.add_var(i->id, val.string_value, stm->type);
             }
         } else {
-            env.add_var(i->id, stm->type); // Sin valor inicial, usa el default
+            env.add_var(i->id, stm->type);
         }
     }
 }

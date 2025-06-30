@@ -45,7 +45,8 @@ bool Parser::checkTypeToken() {
     return current->type == Token::NUM ||
            current->type == Token::STRING ||
            current->type == Token::BOOLEAN ||
-           current->type == Token::INT;
+           current->type == Token::INT ||
+            current->type == Token::VOID;
 }
 
 Parser::Parser(Scanner* sc):scanner(sc) {
@@ -412,7 +413,7 @@ Stm* Parser::ParseStatement(){
         string type=current->text;
         advance();
         if (!match(Token::ID)) {
-            cout << "Error: se esperaba un id después de la expresión." << endl;
+            cout << "Error:se esperaba un id después de la expresión." << endl;
             exit(1);
         }
         string id = previous->text;

@@ -25,6 +25,7 @@ std::ostream& operator << ( std::ostream& outs, const Token & tok )
         case Token::END: outs << "TOKEN(END)"; break;
         case Token::ID: outs << "TOKEN(ID)"; break;
         case Token::ASSIGN: outs << "TOKEN(ASSIGN)"; break;
+        case Token::VOID: outs << "TOKEN(VOID)"; break;
         case Token::PC: outs << "TOKEN(PC)"; break;
         case Token::TRUE: outs << "TOKEN(TRUE)"; break;
         case Token::FALSE: outs << "TOKEN(FALSE)"; break;
