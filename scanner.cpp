@@ -56,7 +56,8 @@ Token* Scanner::nextToken() {
         else if (word == "false") token = new Token(Token::FALSE, word, 0, word.length());
         else if (word == "int") token = new Token(Token::INT, word, 0, word.length());
         else if (word == "bool") token = new Token(Token::BOOLEAN, word, 0, word.length());
-        else if (word == "string") token = new Token(Token::STRING, word, 0, word.length());
+     //   else if (word == "string") token = new Token(Token::STRING, word, 0, word.length());
+        else if (word == "char") token = new Token(Token::STRING, word, 0, word.length());
         else token = new Token(Token::ID, word, 0, word.length());
 
     } else if (strchr("+-*/(){}=;!,|&<>[]", c)) {

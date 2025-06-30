@@ -71,7 +71,7 @@ ImpValue TypeVisitor::visit(BoolExp* exp) {
 }
 
 ImpValue TypeVisitor::visit(StringLiteral *stm) {
-    return ImpValue("string",0,false," ");
+    return ImpValue("char",0,false," ");
 }
 
 ImpValue TypeVisitor::visit(IdentifierExp* exp) {
@@ -241,7 +241,7 @@ void TypeVisitor::visit(AssignStatement* stm) {
 
 void TypeVisitor::visit(VarDec* vd) {
     string t = ImpValue::get_basic_type(vd->type);
-    if (t != "bool" && t != "int" && t != "string") {
+    if (t != "bool" && t != "int" && t != "char") {
         cout << "type error en declaración de variable" << endl;
         exit(0);
     }
@@ -282,7 +282,7 @@ void TypeVisitor::visit(VarDecList* vdl) {
 
 void TypeVisitor::visit(PrintStatement* stm) {
     ImpValue arg = stm->e->accept(this);
-    if (stm->format == "%s\n" && ImpValue::get_basic_type(arg.type) != "string") {
+    if (stm->format == "%s\n" && ImpValue::get_basic_type(arg.type) != "char") {
         cout << "Error: printf espera string, pero se pasa " << arg.type << endl;
         exit(0);
     }
@@ -333,7 +333,7 @@ void TypeVisitor::visit(ForStatement* stm) {
         cout << "Error en el type del for" << endl;
         exit(0);
     }
-    if (stm->type == "string") {
+    if (stm->type == "char") {
         cout << "No se puede declarar string dentro del for" << endl;
         exit(0);
     }

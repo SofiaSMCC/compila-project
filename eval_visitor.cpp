@@ -33,7 +33,7 @@ void declara_array_eval(
                 env.add_var(nombre, valores[valor_idx++].int_value, tipo);
             else if (tipo == "bool")
                 env.add_var(nombre, valores[valor_idx++].bool_value ? 1 : 0, tipo);
-            else if (tipo == "string")
+            else if (tipo == "char")
                 env.add_var(nombre, valores[valor_idx++].string_value, tipo);
         } else {
             env.add_var(nombre, tipo);
@@ -156,7 +156,7 @@ ImpValue EVALVisitor::visit(BoolExp *exp) {
 
 ImpValue EVALVisitor::visit(StringLiteral *exp) {
     string a = exp->value;
-    return ImpValue("string", 0, false, a);
+    return ImpValue("char", 0, false, a);
 }
 
 ImpValue EVALVisitor::visit(IdentifierExp *exp) {
@@ -170,7 +170,7 @@ ImpValue EVALVisitor::visit(IdentifierExp *exp) {
         bool v = env.lookup(exp->name).first;
         return ImpValue(t, 0, v, "");
     }
-    else if (t == "string") {
+    else if (t == "char") {
         string s = env.lookup(exp->name).second;
         return ImpValue(t, 0, false, s);
     }
@@ -187,7 +187,7 @@ ImpValue EVALVisitor::visit(LValue *exp) {
         } else if (t == "bool") {
             bool v = env.lookup(exp->id).first;
             return ImpValue(t, 0, v, "");
-        } else if (t == "string") {
+        } else if (t == "char") {
             string s = env.lookup(exp->id).second;
             return ImpValue(t, 0, false, s);
         }
@@ -207,7 +207,7 @@ ImpValue EVALVisitor::visit(LValue *exp) {
         } else if (t == "bool") {
             bool v = env.lookup(nombre).first;
             return ImpValue(t, 0, v, "");
-        } else if (t == "string") {
+        } else if (t == "char") {
             string s = env.lookup(nombre).second;
             return ImpValue(t, 0, false, s);
         }
@@ -243,8 +243,8 @@ ImpValue EVALVisitor::visit(FCallExp *exp) {
             env.add_var(pname, args[i].int_value, "int");
         else if (ptype == "bool")
             env.add_var(pname, args[i].bool_value ? 1 : 0, "bool");
-        else if (ptype == "string")
-            env.add_var(pname, args[i].string_value, "string");
+        else if (ptype == "char")
+            env.add_var(pname, args[i].string_value, "char");
     }
 
     this->return_encountered = false;
@@ -272,7 +272,7 @@ ImpValue EVALVisitor::visit(ArrayAccessExp *exp) {
     } else if (t == "bool") {
         bool v = env.lookup(nombre).first;
         return ImpValue(t, 0, v, "");
-    } else if (t == "string") {
+    } else if (t == "char") {
         string s = env.lookup(nombre).second;
         return ImpValue(t, 0, false, s);
     }
@@ -307,7 +307,7 @@ void EVALVisitor::visit(AssignStatement *stm) {
         env.update(var_name, val.bool_value ? 1 : 0);
     } else if (t == "int") {
         env.update(var_name, val.int_value);
-    } else if (t == "string") {
+    } else if (t == "char") {
         env.update(var_name, val.string_value);
     }
 }
@@ -369,7 +369,7 @@ void EVALVisitor::visit(WhileStatement *stm) {
 void EVALVisitor::visit(PrintStatement *stm) {
     ImpValue arg = stm->e->accept(this);
     if (stm->format == "%s\n") {
-        if (arg.type == "string") {
+        if (arg.type == "char") {
             cout << arg.string_value << endl;
         } else if (arg.type == "bool") {
             cout << (arg.bool_value ? "true" : "false") << endl;
@@ -377,6 +377,7 @@ void EVALVisitor::visit(PrintStatement *stm) {
             cout << "Error: printf formato %s pero no string/bool" << endl;
         }
     } else if (stm->format == "%d\n") {
+        cout<<"alo"<<endl;
         if (arg.type == "int" || arg.type == "bool") {
             cout << (arg.type == "int" ? arg.int_value : (arg.bool_value ? 1 : 0)) << endl;
         } else {
@@ -437,7 +438,7 @@ void EVALVisitor::visit(VarDec *stm) {
                 env.add_var(i->id, val.int_value, stm->type);
             } else if (stm->type == "bool") {
                 env.add_var(i->id, val.bool_value ? 1 : 0, stm->type);
-            } else if (stm->type == "string") {
+            } else if (stm->type == "char") {
                 env.add_var(i->id, val.string_value, stm->type);
             }
         } else {

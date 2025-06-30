@@ -58,11 +58,10 @@ Parser::Parser(Scanner* sc):scanner(sc) {
     }
 }
 
-Body* Parser::ParseBody() {
+Body* Parser::ParseBody(){
     VarDecList* vdl = nullptr;
     StatementList* smtl = nullptr;
     bool hasVars = false, hasStms = false;
-
     while (!check(Token::LLD) && !isAtEnd()) {
         if (check(Token::INT) || check(Token::STRING) || check(Token::BOOLEAN)) {
             if (!vdl) vdl = new VarDecList();
@@ -105,6 +104,7 @@ FunDec* Parser::ParseFunDec() {
         exit(1);
     }
     type = current->text;
+
     tipo_rt= type;
     advance();
 
@@ -223,18 +223,19 @@ Var* Parser::ParseVar() {
 
     list<NumberExp*> dl;
     while(match(Token::CI)) {
-        if(!match(Token::NUM)) {
-            cout << "Error: se esperaba un número después del corchete izquierdo" << endl;
-            exit(1);
+        if (match(Token::NUM)) {
+            int n = stoi(previous->text);
+            NumberExp* ne = new NumberExp(n);
+            dl.push_back(ne);
         }
-        int n = stoi(previous->text);
-        NumberExp* ne = new NumberExp(n);
-
+        // Si no hay número, está bien para arreglos como x[]
         if(!match(Token::CD)) {
             cout << "Error: se esperaba un ']' después de la expresión de índice." << endl;
             exit(1);
         }
-        dl.push_back(ne);
+        //int n = stoi(previous->text);
+        //NumberExp* ne = new NumberExp(n);
+        //dl.push_back(ne);
     }
     InitValue* iv = nullptr;
     if (match(Token::ASSIGN)) {
@@ -517,7 +518,7 @@ Stm* Parser::ParseStatement(){
         s = new DoWhileStatement(e, b);
     }
     else if (match(Token::RETURN)){
-        if(tipo_rt=="int" or tipo_rt=="bool" or tipo_rt=="string") {
+        if(tipo_rt=="int" or tipo_rt=="bool" or tipo_rt=="char") {
             if(current->text==";") {
                 cout << "Error: se esperaba un valor de retorno en función de tipo " << tipo_rt << endl;
                 exit(1);
@@ -636,7 +637,6 @@ Exp* Parser::parseFactor() {
             }
             return new FCallExp(id, args);
         }
-
         vector<Exp*> indices;
         while (match(Token::CI)) {
             Exp* indexExp = parseAExp();
@@ -656,6 +656,7 @@ Exp* Parser::parseFactor() {
     else if (match(Token::STRING)){
         return new StringLiteral(previous->text);
     }
+
     // números negativos
     else if(match(Token::MINUS)){
         if(match(Token::NUM)) return new NumberExp(stoi(previous->text)* -1);

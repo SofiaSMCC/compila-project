@@ -304,7 +304,7 @@ void PrintVisitor::visit(VarDec* stm) {
     bool first = true;
     for (auto v : stm->vars) {
         if (!first) cout << ", ";
-        v->accept(this);
+        v->accept(this); // Esto llama a visit(Var*) para cada variable
         first = false;
     }
     cout << ";";
@@ -319,10 +319,15 @@ void PrintVisitor::visit(VarDecList* stm) {
 
 void PrintVisitor::visit(Var* stm) {
     cout << stm->id;
-    for (auto d : stm->dimList) {
-        cout << "[";
-        d->accept(this);
-        cout << "]";
+    //cout<<"dimlist"<<stm->dimList.size();
+    for (auto dim : stm->dimList) {
+
+        if (dim) {
+            cout << "[";
+            dim->accept(this);
+            cout << "]";
+        } else {
+        }
     }
     if (stm->iv) {
         cout << " = ";

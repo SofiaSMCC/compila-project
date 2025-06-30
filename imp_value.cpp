@@ -19,8 +19,8 @@ string ImpValue::get_basic_type(string s) {
     if (s == "int" || s == "integer"){
         return "int";
     }
-    if (s == "string"){
-        return "string";
+    if (s == "char"){
+        return "char";
     }
     if (s == "bool" || s == "boolean"){
         return "bool";
