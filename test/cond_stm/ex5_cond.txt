@@ -1,7 +1,7 @@
 #include <stdio.h>
 int main() {
     int x = 10;
-    bool condicion = (x % 2 == 0);
+    bool condicion = (x / 2 == 5);
     if (condicion) {
         printf(" %d\n", x);
     } else {

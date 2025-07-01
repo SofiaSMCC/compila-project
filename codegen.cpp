@@ -2,7 +2,7 @@
 
 void GenCode::generar(Program* program) {
     out << ".data\n";
-    out << "print_fmt: .string \"%ld\\n\"\n";
+    out << "print_fmt: .string \"%d\\n\"\n";
     out << ".text\n";
     out << ".globl main\n";
     program->func->accept(this);
@@ -64,6 +64,10 @@ void GenCode::visit(VarDec* stm) {
                 out << "    movq %rax, " << (memoria[var->id] + idx*8) << "(%rbp)\n";
                 idx++;
             }
+        }
+        else if (var->iv && !var->iv->isList) {
+            var->iv->value->accept(this);
+            out << "    movq %rax, " << memoria[var->id] << "(%rbp)\n";
         }
     }
 }
@@ -293,7 +297,6 @@ ImpValue GenCode::visit(IdentifierExp* exp) {
 }
 
 ImpValue GenCode::visit(BinaryExp* exp) {
-    //cout << "binary" << endl;
     if (exp->op == INC_OP) {
         exp->left->accept(this);
         out << "    addq $1, %rax\n";
@@ -316,69 +319,60 @@ ImpValue GenCode::visit(BinaryExp* exp) {
     exp->left->accept(this);
     out << "    pushq %rax\n";
     exp->right->accept(this);
-    out << "    movq %rax, %rdx\n";
+    out << "    movq %rax, %rcx\n";   // Usa %rcx como temporal
     out << "    popq %rax\n";
     switch (exp->op) {
         case PLUS_OP:
-            out << "    addq %rdx, %rax\n"; break;
+            out << "    addq %rcx, %rax\n"; break;
         case MINUS_OP:
-            out << "    subq %rdx, %rax\n"; break;
+            out << "    subq %rcx, %rax\n"; break;
         case MUL_OP:
-            out << "    imulq %rdx, %rax\n"; break;
+            out << "    imulq %rcx, %rax\n"; break;
         case DIV_OP:
-            out << "    cqto\n";
-            out << "    idivq %rdx\n";
-            break;
+            out << "    cqto\n"
+                   "    idivq %rcx\n"; break;
         case LT_OP:
-            out << "    cmpq %rdx, %rax\n"
+            out << "    cmpq %rcx, %rax\n"
                    "    movl $0, %eax\n"
                    "    setl %al\n"
-                   "    movzbq %al, %rax\n";
-            break;
+                   "    movzbq %al, %rax\n"; break;
         case LET_OP:
-            out << "    cmpq %rdx, %rax\n"
+            out << "    cmpq %rcx, %rax\n"
                    "    movl $0, %eax\n"
                    "    setle %al\n"
-                   "    movzbq %al, %rax\n";
-            break;
+                   "    movzbq %al, %rax\n"; break;
         case GT_OP:
-            out << "    cmpq %rdx, %rax\n"
+            out << "    cmpq %rcx, %rax\n"
                    "    movl $0, %eax\n"
                    "    setg %al\n"
-                   "    movzbq %al, %rax\n";
-            break;
+                   "    movzbq %al, %rax\n"; break;
         case GET_OP:
-            out << "    cmpq %rdx, %rax\n"
+            out << "    cmpq %rcx, %rax\n"
                    "    movl $0, %eax\n"
                    "    setge %al\n"
-                   "    movzbq %al, %rax\n";
-            break;
+                   "    movzbq %al, %rax\n"; break;
         case EQ_OP:
-            out << "    cmpq %rdx, %rax\n"
+            out << "    cmpq %rcx, %rax\n"
                    "    movl $0, %eax\n"
                    "    sete %al\n"
-                   "    movzbq %al, %rax\n";
-            break;
+                   "    movzbq %al, %rax\n"; break;
         case DIFF_OP:
-            out << "    cmpq %rdx, %rax\n"
+            out << "    cmpq %rcx, %rax\n"
                    "    movl $0, %eax\n"
                    "    setne %al\n"
-                   "    movzbq %al, %rax\n";
-            break;
+                   "    movzbq %al, %rax\n"; break;
         case AND_OP:
             out << "    setne %al\n"
                    "    movzbq %al, %rax\n"
-                   "    setne %dl\n"
-                   "    movzbq %dl, %rdx\n"
-                   "    andq %rdx, %rax\n";
-            break;
+                   "    setne %cl\n"
+                   "    movzbq %cl, %rcx\n"
+                   "    andq %rcx, %rax\n"; break;
         case OR_OP:
             out << "    setne %al\n"
                    "    movzbq %al, %rax\n"
-                   "    setne %dl\n"
-                   "    movzbq %dl, %rdx\n"
-                   "    orq %rdx, %rax\n";
-            break;
+                   "    setne %cl\n"
+                   "    movzbq %cl, %rcx\n"
+                   "    orq %rcx, %rax\n"; break;
         default:
             break;
     }
