@@ -36,31 +36,6 @@ void GenCode::visit(FunDec* f) {
         f->cuerpo->vardecs->accept(this);
     }
 
-    int reserva = -offset;
-    if (reserva>0) {
-        out << "    subq $" << reserva <<", %rsp" << std::endl;
-    }
-
-    if (f->cuerpo->vardecs) {
-        for (auto vd : f->cuerpo->vardecs->vardecs) {
-            for (auto var : vd->vars) {
-                if (!var->dimList.empty()) {
-                    int size = (*var->dimList.begin())->value;
-                    for (int idx = 0; idx < size; ++idx) {
-                        out << "    movq $0, " << (memoria[var->id] + idx * 8) << "(%rbp)\n";
-                    }
-                } else {
-                    if (var->iv && var->iv->value) {
-                        var->iv->value->accept(this);
-                        out << "    movq %rax, " << memoria[var->id] << "(%rbp)\n";
-                    } else {
-                        out << "    movq $0, " << memoria[var->id] << "(%rbp)\n";
-                    }
-                }
-            }
-        }
-    }
-
     if (f->cuerpo->slist)
         f->cuerpo->slist->accept(this);
 
@@ -72,18 +47,27 @@ void GenCode::visit(FunDec* f) {
 
 void GenCode::visit(VarDec* stm) {
     for (auto var : stm->vars) {
-        if (!var->dimList.empty()) {
-            int size = (*var->dimList.begin())->value;
-            memoria[var->id] = offset;
-            offset -= size * 8;
-        } else {
-            if (memoria.count(var->id) == 0)  {
-                memoria[var->id] = offset;
-                offset -= 8;
+        // Solo 1 dim:
+        int size = var->dimList.empty() ? 1 : var->dimList.front()->value;
+        memoria[var->id] = offset;
+        offset -= size * 8;
+        out << "    subq $" << (size * 8) << ", %rsp\n";
+
+        for (int idx = 0; idx < size; ++idx) {
+            out << "    movq $0, " << (memoria[var->id] + idx * 8) << "(%rbp)\n";
+        }
+
+        if (var->iv && var->iv->isList) {
+            int idx = 0;
+            for (auto val : var->iv->list) {
+                val->value->accept(this);
+                out << "    movq %rax, " << (memoria[var->id] + idx*8) << "(%rbp)\n";
+                idx++;
             }
         }
     }
 }
+
 void GenCode::visit(Body* b) {
     if (b->vardecs){
         b->vardecs->accept(this);
@@ -254,9 +238,7 @@ ImpValue GenCode::visit(BoolExp *exp) {
 
 
 ImpValue GenCode::visit(ArrayAccessExp *exp) {
-    //cout << "array acces exp" << endl;
-    // Unidimensional
-    exp->indices[0]->accept(this);
+    exp->indices[0]->accept(this);     // %rax = i
     out << "    movq %rax, %rdx\n";
     out << "    movq " << memoria[exp->arrayName] << "(%rbp, %rdx, 8), %rax\n";
     return ImpValue();
