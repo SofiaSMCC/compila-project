@@ -319,7 +319,7 @@ void PrintVisitor::visit(VarDecList* stm) {
 
 void PrintVisitor::visit(Var* stm) {
     cout << stm->id;
-    //cout<<"dimlist"<<stm->dimList.size();
+
     for (auto dim : stm->dimList) {
 
         if (dim) {
@@ -327,6 +327,7 @@ void PrintVisitor::visit(Var* stm) {
             dim->accept(this);
             cout << "]";
         } else {
+            cout << "[]";
         }
     }
     if (stm->iv) {

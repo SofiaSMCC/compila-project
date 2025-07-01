@@ -227,9 +227,9 @@ Var* Parser::ParseVar() {
             int n = stoi(previous->text);
             NumberExp* ne = new NumberExp(n);
             dl.push_back(ne);
-        }
-        // Si no hay número, está bien para arreglos como x[]
-        if(!match(Token::CD)) {
+        }else if (match(Token::CD)) {
+            dl.push_back(nullptr); // <-- Esto es lo importante
+        }else{
             cout << "Error: se esperaba un ']' después de la expresión de índice." << endl;
             exit(1);
         }
@@ -612,6 +612,7 @@ Exp* Parser::parseTerm() {
 }
 
 Exp* Parser::parseFactor() {
+    cout<<" que pasa?"<<current->text;
     if (match(Token::TRUE)){
         return new BoolExp(1);
     }
@@ -654,7 +655,8 @@ Exp* Parser::parseFactor() {
         return new IdentifierExp(id);
     }
     else if (match(Token::STRING)){
-        return new StringLiteral(previous->text);
+        int n=previous->text.size();
+        return new StringLiteral(previous->text,n);
     }
 
     // números negativos
