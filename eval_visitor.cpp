@@ -448,4 +448,5 @@ void EVALVisitor::visit(VarDec *stm) {
 }
 
 void EVALVisitor::visit(Var *stm) {
+
 }

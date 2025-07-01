@@ -184,7 +184,6 @@ VarDec* Parser::ParseVarDec() {
 
     list<Var*> vars;
     vars.push_back(ParseVar());
-
     while (match(Token::COMA)) {
         vars.push_back(ParseVar());
     }
@@ -227,8 +226,9 @@ Var* Parser::ParseVar() {
             int n = stoi(previous->text);
             NumberExp* ne = new NumberExp(n);
             dl.push_back(ne);
+            match(Token::CD);
         }else if (match(Token::CD)) {
-            dl.push_back(nullptr); // <-- Esto es lo importante
+            dl.push_back(nullptr);
         }else{
             cout << "Error: se esperaba un ']' después de la expresión de índice." << endl;
             exit(1);
@@ -240,6 +240,10 @@ Var* Parser::ParseVar() {
     InitValue* iv = nullptr;
     if (match(Token::ASSIGN)) {
         iv = ParseInitValue();
+    }
+    if(!dl.empty() && dl.back() == nullptr && iv == nullptr) {
+        cout<<"Se debe dar un valor inicial a "<<id <<endl;
+        exit(1);
     }
     return new Var(id, dl, iv);
 }
@@ -612,7 +616,7 @@ Exp* Parser::parseTerm() {
 }
 
 Exp* Parser::parseFactor() {
-    cout<<" que pasa?"<<current->text;
+
     if (match(Token::TRUE)){
         return new BoolExp(1);
     }
@@ -655,8 +659,7 @@ Exp* Parser::parseFactor() {
         return new IdentifierExp(id);
     }
     else if (match(Token::STRING)){
-        int n=previous->text.size();
-        return new StringLiteral(previous->text,n);
+        return new StringLiteral(previous->text);
     }
 
     // números negativos

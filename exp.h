@@ -51,9 +51,7 @@ public:
 class StringLiteral : public Exp {
 public:
     string value;
-    int dimen=0;
     StringLiteral(const string& value);
-    StringLiteral(const string& value, int dim);
     ImpValue accept(Visitor* visitor);
     //string acceptString(Visitor* visitor);
     ~StringLiteral();

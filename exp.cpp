@@ -13,7 +13,6 @@ NumberExp::NumberExp(int v):value(v) {}
 BoolExp::BoolExp(bool v):value(v) {}
 IdentifierExp::IdentifierExp(const string& n):name(n) {}
 StringLiteral::StringLiteral(const string& value):value(value){}
-StringLiteral::StringLiteral(const string& value, int dim):value(value),dimen(dim){}
 StringLiteral::~StringLiteral(){}
 Exp::~Exp() {}
 BinaryExp::~BinaryExp() { delete left; delete right; }
