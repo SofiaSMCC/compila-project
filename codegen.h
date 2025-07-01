@@ -2,22 +2,31 @@
 #define COMPILA_PROJECT_CODEGEN_HH
 
 #include "visitor.h"
+#include "map"
+#include "stack"
 using namespace std;
+
+struct ScopeFrame {
+    std::map<std::string, int> variables;
+    int saved_offset;
+};
 
 class GenCode : public Visitor {
 private:
     std::ostream& out;
     unordered_map<string, int> memoria;
-    // para arrays
-    unordered_map<string, int> tamaniosArray; // total elementos
+    // arrays
+    unordered_map<string, int> tamaniosArray;    // total elementos
     unordered_map<string, vector<int>> dimsArray;// dimensiones
-    // para strings
-    int stringLiteralCount = 0;
+    // strings
     vector<string> stringLiterals;
     int offset = -8;
     int labelcont = 0;
     bool entornoFuncion = false;
     string nombreFuncion;
+
+    // manejo de variables locales
+    std::stack<ScopeFrame> scope_stack;
 public:
     GenCode(ostream& out) : out(out) {}
     void generar(Program* program);

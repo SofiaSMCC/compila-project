@@ -49,12 +49,19 @@ void GenCode::visit(VarDec* stm) {
     for (auto var : stm->vars) {
         // Solo 1 dim:
         int size = var->dimList.empty() ? 1 : var->dimList.front()->value;
-        memoria[var->id] = offset;
-        offset -= size * 8;
-        out << "    subq $" << (size * 8) << ", %rsp\n";
 
-        for (int idx = 0; idx < size; ++idx) {
-            out << "    movq $0, " << (memoria[var->id] + idx * 8) << "(%rbp)\n";
+        if (memoria.count(var->id) == 0) {
+            memoria[var->id] = offset;
+            offset -= size * 8;
+            out << "    subq $" << (size * 8) << ", %rsp\n";
+
+            if (!scope_stack.empty()) {
+                scope_stack.top().variables[var->id] = memoria[var->id];
+            }
+
+            for (int idx = 0; idx < size; ++idx) {
+                out << "    movq $0, " << (memoria[var->id] + idx * 8) << "(%rbp)\n";
+            }
         }
 
         if (var->iv && var->iv->isList) {
@@ -71,7 +78,6 @@ void GenCode::visit(VarDec* stm) {
         }
     }
 }
-
 void GenCode::visit(Body* b) {
     if (b->vardecs){
         b->vardecs->accept(this);
@@ -115,11 +121,11 @@ void GenCode::visit(PrintStatement* stm) {
             "    movq %rax, %rsi\n"
             "    leaq print_fmt(%rip), %rdi\n"
             "    movl $0, %eax\n"
-            "    call printf@PLT\n";
+            "    subq $8, %rsp\n"
+            "    call printf@PLT\n"
+            "    addq $8, %rsp\n";
     }
 }
-
-
 
 void GenCode::visit(ReturnStatement* stm) {
     //cout << "return" << endl;
@@ -176,12 +182,16 @@ void GenCode::visit(IfStatement *stmt) {
 
     out << "endif_" << endif_label << ":\n";
 }
-
 void GenCode::visit(ForStatement *stmt) {
+    ScopeFrame frame;
+    frame.saved_offset = offset;
+    scope_stack.push(frame);
+
     if (memoria.count(stmt->id) == 0) {
         memoria[stmt->id] = offset;
         offset -= 8;
         out << "    subq $8, %rsp\n";
+        scope_stack.top().variables[stmt->id] = memoria[stmt->id];
     }
 
     stmt->start->accept(this);
@@ -195,12 +205,47 @@ void GenCode::visit(ForStatement *stmt) {
     out << "    cmpq $0, %rax\n";
     out << "    je endfor_" << end_label << "\n";
 
-    stmt->b->accept(this);
-    stmt->step->accept(this);
+    ScopeFrame body_frame;
+    body_frame.saved_offset = offset;
+    scope_stack.push(body_frame);
 
+    stmt->b->accept(this);
+
+    if (!scope_stack.empty()) {
+        ScopeFrame current_frame = scope_stack.top();
+        scope_stack.pop();
+
+        if (offset < current_frame.saved_offset) {
+            int bytes_to_restore = current_frame.saved_offset - offset;
+            out << "    addq $" << bytes_to_restore << ", %rsp\n";
+            offset = current_frame.saved_offset;
+        }
+
+        for (auto& var : current_frame.variables) {
+            memoria.erase(var.first);
+        }
+    }
+
+    stmt->step->accept(this);
     out << "    movq %rax, " << memoria[stmt->id] << "(%rbp)\n";
+
     out << "    jmp for_" << loop_label << "\n";
     out << "endfor_" << end_label << ":\n";
+
+    if (!scope_stack.empty()) {
+        ScopeFrame main_frame = scope_stack.top();
+        scope_stack.pop();
+
+        if (offset < main_frame.saved_offset) {
+            int bytes_to_restore = main_frame.saved_offset - offset;
+            out << "    addq $" << bytes_to_restore << ", %rsp\n";
+            offset = main_frame.saved_offset;
+        }
+
+        for (auto& var : main_frame.variables) {
+            memoria.erase(var.first);
+        }
+    }
 }
 
 void GenCode::visit(FCallStatement *stm) {
