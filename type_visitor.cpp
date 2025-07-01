@@ -86,6 +86,23 @@ ImpValue TypeVisitor::visit(BinaryExp* exp) {
     ImpValue left = exp->left->accept(this);
     ImpValue right;
 
+    if (exp->op == INC_OP) {
+        if (ImpValue::get_basic_type(left.type) != "int") {
+            cout << "Error: incremento solo soportado para int" << endl;
+            exit(1);
+        }
+        result1 = left.int_value + 1;
+        return ImpValue("int", result1, false, "");
+    }
+    if (exp->op == DEC_OP) {
+        if (ImpValue::get_basic_type(left.type) != "int") {
+            cout << "Error: decremento solo soportado para int" << endl;
+            exit(1);
+        }
+        result1 = left.int_value - 1;
+        return ImpValue("int", result1, false, "");
+    }
+
     if (exp->right) {
         right = exp->right->accept(this);
     }
@@ -378,11 +395,14 @@ void TypeVisitor::visit(ForStatement* stm) {
         cout << "Error en el type del for" << endl;
         exit(0);
     }
-    cout << "end for OFOFOFOFO" << endl;
     if (stm->type == "string") {
         cout << "No se puede declarar string dentro del for" << endl;
         exit(0);
     }
+    env->add_level();
+    env->add_var(stm->id, stm->type);
+    if (stm->b) stm->b->accept(this);
+    env->remove_level();
     cout << "end of FOR" << endl;
 }
 

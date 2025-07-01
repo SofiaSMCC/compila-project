@@ -130,21 +130,19 @@ void GenCode::visit(ReturnStatement* stm) {
 void GenCode::visit(Var *v) {}
 
 void GenCode::visit(WhileStatement *stmt) {
-    //cout << "while" << endl;
     int start_label = labelcont++;
     int end_label = labelcont++;
 
     out << "while_" << start_label << ":\n";
     stmt->condition->accept(this);
     out << "    cmpq $0, %rax\n";
-    out << "    je endw_" << end_label << "\n";
+    out << "    je endwhile_" << end_label << "\n";
 
     stmt->b->accept(this);
 
     out << "    jmp while_" << start_label << "\n";
-    out << "endw_" << end_label << ":\n";
+    out << "endwhile_" << end_label << ":\n";
 }
-
 void GenCode::visit(IfStatement *stmt) {
     //cout << "if statemetn" << endl;
     int endif_label = labelcont++;
@@ -180,10 +178,10 @@ void GenCode::visit(IfStatement *stmt) {
 }
 
 void GenCode::visit(ForStatement *stmt) {
-    //cout << "for statement" << endl;
     if (memoria.count(stmt->id) == 0) {
         memoria[stmt->id] = offset;
         offset -= 8;
+        out << "    subq $8, %rsp\n";
     }
 
     stmt->start->accept(this);
@@ -193,7 +191,6 @@ void GenCode::visit(ForStatement *stmt) {
     int end_label = labelcont++;
 
     out << "for_" << loop_label << ":\n";
-
     stmt->condition->accept(this);
     out << "    cmpq $0, %rax\n";
     out << "    je endfor_" << end_label << "\n";
@@ -202,7 +199,6 @@ void GenCode::visit(ForStatement *stmt) {
     stmt->step->accept(this);
 
     out << "    movq %rax, " << memoria[stmt->id] << "(%rbp)\n";
-
     out << "    jmp for_" << loop_label << "\n";
     out << "endfor_" << end_label << ":\n";
 }
@@ -214,12 +210,16 @@ void GenCode::visit(FCallStatement *stm) {
 
 void GenCode::visit(DoWhileStatement *stm) {
     int start_label = labelcont++;
+    int end_label = labelcont++;
+
     out << "dowhile_" << start_label << ":\n";
     stm->b->accept(this);
     stm->condition->accept(this);
     out << "    cmpq $0, %rax\n";
     out << "    jne dowhile_" << start_label << "\n";
+    out << "enddowhile_" << end_label << ":\n";
 }
+
 
 void GenCode::visit(FunDecList *fdl) {
     //cout << "fun dec list" << endl;

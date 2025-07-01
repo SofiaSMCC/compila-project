@@ -272,8 +272,27 @@ Stm* Parser::ParseStatement(){
     }
     if (match(Token::ID)) {
         string id = previous->text;
-
-        if (check(Token::PI)) {
+        if (match(Token::DPLUS)) {
+            if (!match(Token::PC)) {
+                cout << "Error: se esperaba ';' después de '++'" << endl;
+                exit(1);
+            }
+            s = new AssignStatement(
+                    new LValue(id, {}),
+                    new BinaryExp(new IdentifierExp(id), new NumberExp(1), INC_OP)
+            );
+        }
+        else if (match(Token::DMINUS)) {
+            if (!match(Token::PC)) {
+                cout << "Error: se esperaba ';' después de '--'" << endl;
+                exit(1);
+            }
+            s = new AssignStatement(
+                    new LValue(id, {}),
+                    new BinaryExp(new IdentifierExp(id), new NumberExp(1), DEC_OP)
+            );
+        }
+        else if (check(Token::PI)) {
             advance();
             vector<Exp*> args;
             if (!check(Token::PD)) {
