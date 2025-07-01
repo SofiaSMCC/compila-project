@@ -249,6 +249,10 @@ void TypeVisitor::visit(VarDec* vd) {
         if (!i->dimList.empty()) {
             vector<int> dims;
             for (auto nexp : i->dimList) {
+               if(nexp==nullptr) {
+                   env->add_var("x","char");
+                   return;
+               }
                 dims.push_back(nexp->value);
                 if(!InitValueType(i->iv,t,this)) {
                     cout << "Error de tipo en inicialización de array: '" << i->id

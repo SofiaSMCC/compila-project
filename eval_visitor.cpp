@@ -160,6 +160,7 @@ ImpValue EVALVisitor::visit(StringLiteral *exp) {
 }
 
 ImpValue EVALVisitor::visit(IdentifierExp *exp) {
+
     string t = env.lookup_type(exp->name);
 
     if (t == "int") {
@@ -194,6 +195,7 @@ ImpValue EVALVisitor::visit(LValue *exp) {
     } else {
         // Soporte para arrays: nombre[i] -> "nombre[0]", etc.
         string nombre = exp->id + "[";
+        cout<<" indice empty";
         for (size_t i = 0; i < exp->indices.size(); ++i) {
             int idx = exp->indices[i]->accept(this).int_value;
             nombre += to_string(idx);
@@ -413,14 +415,25 @@ void EVALVisitor::visit(Body *b) {
     if (b->vardecs) b->vardecs->accept(this);
     if (b->slist) b->slist->accept(this);
 }
-
 void EVALVisitor::visit(VarDec *stm) {
     for (auto i : stm->vars) {
-        // Si es array multidimensional
+        if (!i->dimList.empty() && i->dimList.back() == nullptr && stm->type == "char" && i->iv && !i->iv->isList) {
+            StringLiteral* str_lit = dynamic_cast<StringLiteral*>(i->iv->value);
+            if (!str_lit) {
+                cout << "Error: se esperaba un literal string en la inicialización de char[]\n";
+                exit(1);
+            }
+            env.add_var(i->id, str_lit->value, "char");
+            continue;
+        }
+        // Si es array multidimensional con tamaño explícito
         if (!i->dimList.empty()) {
-            // Calcula las dimensiones
             std::vector<int> dims;
             for (auto nexp : i->dimList) {
+                if(nexp == nullptr) {
+                    // Ya manejado arriba el caso char x[] = ...
+                    continue;
+                }
                 dims.push_back(nexp->value);
             }
             std::vector<ImpValue> valores;

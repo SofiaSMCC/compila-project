@@ -181,7 +181,6 @@ VarDec* Parser::ParseVarDec() {
     }
     type = current->text;
     advance();
-
     list<Var*> vars;
     vars.push_back(ParseVar());
     while (match(Token::COMA)) {
