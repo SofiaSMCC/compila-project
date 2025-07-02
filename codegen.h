@@ -21,7 +21,7 @@ private:
 public:
     GenCode(ostream& out) : out(out) {}
     void generar(Program* program);
-
+    string emitStringLiteral(const std::string& str);
     ImpValue visit(BinaryExp* exp) override;
     ImpValue visit(NumberExp* exp) override;
     ImpValue visit(BoolExp* exp) override;

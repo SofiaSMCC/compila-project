@@ -4,7 +4,7 @@ void GenCode::generar(Program* program) {
     out << ".data\n";
     out << "print_fmt: .string \"%ld\\n\"\n";
     out << ".text\n";
-    out << ".globl main\n";
+    out << " .globl main\n";
     program->func->accept(this);
     out << ".section .note.GNU-stack,\"\",@progbits\n";
 }
@@ -18,9 +18,10 @@ void GenCode::visit(FunDec* f) {
     memoria.clear();
     offset = -8;
     nombreFuncion = f->nombre;
-    std::vector<std::string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+    vector<string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
     out << " .globl "<< f->nombre << std::endl;
-    out << f->nombre <<":" << std::endl;
+    out << f->nombre <<":" << endl;
+
     out << "    pushq %rbp\n";
     out << "    movq %rsp, %rbp\n";
 
@@ -71,6 +72,14 @@ void GenCode::visit(FunDec* f) {
 }
 
 void GenCode::visit(VarDec* stm) {
+
+    if(stm->type=="char") {
+        cout<<stm->vars.back()->id<<": ";
+        if(stm->vars.back()->dimList.back()==nullptr) {
+            cout<<stm->vars.back()->iv->value->accept(this).string_value;
+        }
+    }
+
     for (auto var : stm->vars) {
         if (!var->dimList.empty()) {
             int size = (*var->dimList.begin())->value;
@@ -229,6 +238,8 @@ void GenCode::visit(FunDecList *fdl) {
 // Exp
 
 ImpValue GenCode::visit(StringLiteral *exp) {
+   cout<<".string \""<<exp->value<<"\"";
+
     return ImpValue();
 }
 
