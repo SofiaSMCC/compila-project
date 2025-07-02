@@ -370,7 +370,7 @@ void EVALVisitor::visit(WhileStatement *stm) {
 
 void EVALVisitor::visit(PrintStatement *stm) {
     ImpValue arg = stm->e->accept(this);
-    if (stm->format == "%s\n") {
+    if (stm->format == "%s\\n") {
         if (arg.type == "char") {
             cout << arg.string_value << endl;
         } else if (arg.type == "bool") {
@@ -378,8 +378,7 @@ void EVALVisitor::visit(PrintStatement *stm) {
         } else {
             cout << "Error: printf formato %s pero no string/bool" << endl;
         }
-    } else if (stm->format == "%d\n") {
-        cout<<"alo"<<endl;
+    } else if (stm->format == "%d\\n") {;
         if (arg.type == "int" || arg.type == "bool") {
             cout << (arg.type == "int" ? arg.int_value : (arg.bool_value ? 1 : 0)) << endl;
         } else {
@@ -428,7 +427,7 @@ void EVALVisitor::visit(VarDec *stm) {
         }
         // Si es array multidimensional con tamaño explícito
         if (!i->dimList.empty()) {
-            std::vector<int> dims;
+            vector<int> dims;
             for (auto nexp : i->dimList) {
                 if(nexp == nullptr) {
                     // Ya manejado arriba el caso char x[] = ...
@@ -440,7 +439,7 @@ void EVALVisitor::visit(VarDec *stm) {
             if (i->iv && i->iv->isList) {
                 recolectaValores(i->iv, valores, this);
             }
-            std::vector<int> idxs;
+            vector<int> idxs;
             size_t valor_idx = 0;
             declara_array_eval(i->id, dims, 0, idxs, stm->type, env, valores, valor_idx);
         }
