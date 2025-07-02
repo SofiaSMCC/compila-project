@@ -114,7 +114,10 @@ class PrintStatement : public Stm {
 public:
     string format;
     Exp* e;
+    vector<Exp*> args;
     PrintStatement(string format, Exp* e);
+    PrintStatement(string format, Exp* e, vector<Exp* >args);
+
     int accept(Visitor* visitor);
     ~PrintStatement();
 };

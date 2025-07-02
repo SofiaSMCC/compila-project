@@ -2,7 +2,7 @@
 
 void GenCode::generar(Program* program) {
     out << ".data\n";
-    out << "print_fmt: .string \"%ld\\n\"\n";
+    out << "print_fmt: .string \"%d\\n\"\n";
     out << ".text\n";
     out << " .globl main\n";
     program->func->accept(this);
@@ -18,9 +18,13 @@ void GenCode::visit(FunDec* f) {
     memoria.clear();
     offset = -8;
     nombreFuncion = f->nombre;
-    vector<string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+    std::vector<std::string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
     out << " .globl "<< f->nombre << std::endl;
-    out << f->nombre <<":" << endl;
+    for (auto a:f->cuerpo->vardecs->vardecs)
+    if(a->type=="char") {
+        a->accept(this);
+    }
+    out << f->nombre <<":" << std::endl;
 
     out << "    pushq %rbp\n";
     out << "    movq %rsp, %rbp\n";
@@ -37,31 +41,6 @@ void GenCode::visit(FunDec* f) {
         f->cuerpo->vardecs->accept(this);
     }
 
-    int reserva = -offset;
-    if (reserva>0) {
-        out << "    subq $" << reserva <<", %rsp" << std::endl;
-    }
-
-    if (f->cuerpo->vardecs) {
-        for (auto vd : f->cuerpo->vardecs->vardecs) {
-            for (auto var : vd->vars) {
-                if (!var->dimList.empty()) {
-                    int size = (*var->dimList.begin())->value;
-                    for (int idx = 0; idx < size; ++idx) {
-                        out << "    movq $0, " << (memoria[var->id] + idx * 8) << "(%rbp)\n";
-                    }
-                } else {
-                    if (var->iv && var->iv->value) {
-                        var->iv->value->accept(this);
-                        out << "    movq %rax, " << memoria[var->id] << "(%rbp)\n";
-                    } else {
-                        out << "    movq $0, " << memoria[var->id] << "(%rbp)\n";
-                    }
-                }
-            }
-        }
-    }
-
     if (f->cuerpo->slist)
         f->cuerpo->slist->accept(this);
 
@@ -71,28 +50,50 @@ void GenCode::visit(FunDec* f) {
     entornoFuncion = false;
 }
 
-void GenCode::visit(VarDec* stm) {
-
+void caberaString(VarDec* stm) {
     if(stm->type=="char") {
-        cout<<stm->vars.back()->id<<": ";
+        out<<stm->vars.back()->id<<": ";
         if(stm->vars.back()->dimList.back()==nullptr) {
-            cout<<stm->vars.back()->iv->value->accept(this).string_value;
-        }
-    }
-
-    for (auto var : stm->vars) {
-        if (!var->dimList.empty()) {
-            int size = (*var->dimList.begin())->value;
-            memoria[var->id] = offset;
-            offset -= size * 8;
-        } else {
-            if (memoria.count(var->id) == 0)  {
-                memoria[var->id] = offset;
-                offset -= 8;
-            }
+            out<<stm->vars.back()->iv->value->accept(this).string_value;
+            return;
         }
     }
 }
+void GenCode::visit(VarDec* stm) {
+
+    if(stm->type=="char") {
+        out<<stm->vars.back()->id<<": ";
+        if(stm->vars.back()->dimList.back()==nullptr) {
+            out<<stm->vars.back()->iv->value->accept(this).string_value;
+            return;
+        }
+    }
+    for (auto var : stm->vars) {
+        // Solo 1 dim:
+        int size = var->dimList.empty() ? 1 : var->dimList.front()->value;
+        memoria[var->id] = offset;
+        offset -= size * 8;
+        out << "    subq $" << (size * 8) << ", %rsp\n";
+
+        for (int idx = 0; idx < size; ++idx) {
+            out << "    movq $0, " << (memoria[var->id] + idx * 8) << "(%rbp)\n";
+        }
+
+        if (var->iv && var->iv->isList) {
+            int idx = 0;
+            for (auto val : var->iv->list) {
+                val->value->accept(this);
+                out << "    movq %rax, " << (memoria[var->id] + idx*8) << "(%rbp)\n";
+                idx++;
+            }
+        }
+        else if (var->iv && !var->iv->isList) {
+            var->iv->value->accept(this);
+            out << "    movq %rax, " << memoria[var->id] << "(%rbp)\n";
+        }
+    }
+}
+
 void GenCode::visit(Body* b) {
     if (b->vardecs){
         b->vardecs->accept(this);
@@ -103,18 +104,21 @@ void GenCode::visit(Body* b) {
 }
 
 void GenCode::visit(VarDecList* stm) {
+    //cout << "var dec list" << endl;
     for (auto vd : stm->vardecs){
         vd->accept(this);
     }
 }
 
 void GenCode::visit(StatementList* stm) {
+    //cout << "stm list" << endl;
     for (auto s : stm->stms){
         s->accept(this);
     }
 }
 
 void GenCode::visit(AssignStatement* stm) {
+    //cout << "assign" << endl;
     if (!stm->lvalue->indices.empty()) {
         stm->lvalue->indices[0]->accept(this);
         out << "    movq %rax, %rcx\n";
@@ -127,15 +131,20 @@ void GenCode::visit(AssignStatement* stm) {
 }
 
 void GenCode::visit(PrintStatement* stm) {
-    stm->e->accept(this);
-    out <<
-        "    movq %rax, %rsi\n"
-        "    leaq print_fmt(%rip), %rdi\n"
-        "    movl $0, %eax\n"
-        "    call printf@PLT\n";
+    for (size_t i = 0; i < stm->args.size(); ++i) {
+        stm->args[i]->accept(this);  // Resultado en %rax
+        out <<
+            "    movq %rax, %rsi\n"
+            "    leaq print_fmt(%rip), %rdi\n"
+            "    movl $0, %eax\n"
+            "    call printf@PLT\n";
+    }
 }
 
+
+
 void GenCode::visit(ReturnStatement* stm) {
+    //cout << "return" << endl;
     stm->e->accept(this);
     out << "    jmp .end_" << nombreFuncion << "\n";
 }
@@ -149,15 +158,15 @@ void GenCode::visit(WhileStatement *stmt) {
     out << "while_" << start_label << ":\n";
     stmt->condition->accept(this);
     out << "    cmpq $0, %rax\n";
-    out << "    je endw_" << end_label << "\n";
+    out << "    je endwhile_" << end_label << "\n";
 
     stmt->b->accept(this);
 
     out << "    jmp while_" << start_label << "\n";
-    out << "endw_" << end_label << ":\n";
+    out << "endwhile_" << end_label << ":\n";
 }
-
 void GenCode::visit(IfStatement *stmt) {
+    //cout << "if statemetn" << endl;
     int endif_label = labelcont++;
     std::vector<int> else_labels;
 
@@ -194,6 +203,7 @@ void GenCode::visit(ForStatement *stmt) {
     if (memoria.count(stmt->id) == 0) {
         memoria[stmt->id] = offset;
         offset -= 8;
+        out << "    subq $8, %rsp\n";
     }
 
     stmt->start->accept(this);
@@ -203,7 +213,6 @@ void GenCode::visit(ForStatement *stmt) {
     int end_label = labelcont++;
 
     out << "for_" << loop_label << ":\n";
-
     stmt->condition->accept(this);
     out << "    cmpq $0, %rax\n";
     out << "    je endfor_" << end_label << "\n";
@@ -212,25 +221,30 @@ void GenCode::visit(ForStatement *stmt) {
     stmt->step->accept(this);
 
     out << "    movq %rax, " << memoria[stmt->id] << "(%rbp)\n";
-
     out << "    jmp for_" << loop_label << "\n";
     out << "endfor_" << end_label << ":\n";
 }
 
 void GenCode::visit(FCallStatement *stm) {
+    //cout << "f call stm" << endl;
     stm->call->accept(this);
 }
 
 void GenCode::visit(DoWhileStatement *stm) {
     int start_label = labelcont++;
+    int end_label = labelcont++;
+
     out << "dowhile_" << start_label << ":\n";
     stm->b->accept(this);
     stm->condition->accept(this);
     out << "    cmpq $0, %rax\n";
     out << "    jne dowhile_" << start_label << "\n";
+    out << "enddowhile_" << end_label << ":\n";
 }
 
+
 void GenCode::visit(FunDecList *fdl) {
+    //cout << "fun dec list" << endl;
     for (auto f : fdl->Fundecs)
         f->accept(this);
 }
@@ -238,30 +252,31 @@ void GenCode::visit(FunDecList *fdl) {
 // Exp
 
 ImpValue GenCode::visit(StringLiteral *exp) {
-   cout<<".string \""<<exp->value<<"\"";
-
+    out << "\t.string " << "\""<<exp->value<<"\""<<endl;
     return ImpValue();
 }
 
 ImpValue GenCode::visit(BoolExp *exp) {
+    //cout << "bool" << endl;
     out << "    movq $" << (exp->value ? 1 : 0) << ", %rax\n";
     return ImpValue();
 }
 
 
 ImpValue GenCode::visit(ArrayAccessExp *exp) {
-    // Unidimensional
-    exp->indices[0]->accept(this);
+    exp->indices[0]->accept(this);     // %rax = i
     out << "    movq %rax, %rdx\n";
     out << "    movq " << memoria[exp->arrayName] << "(%rbp, %rdx, 8), %rax\n";
     return ImpValue();
 }
 
 ImpValue GenCode::visit(IFExp *exp) {
+    //cout << "if exp" << endl;
     return ImpValue();
 }
 
 ImpValue GenCode::visit(LValue *exp) {
+    //cout << "l value" << endl;
     if (exp->indices.empty()) {
         out << "    movq " << memoria[exp->id] << "(%rbp), %rax\n";
     } else {
@@ -273,6 +288,7 @@ ImpValue GenCode::visit(LValue *exp) {
 }
 
 ImpValue GenCode::visit(FCallExp* exp) {
+    //cout << "fcallexp" << endl;
     int nargs = exp->argumentos.size();
     std::vector<std::string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
     for (int i = 0; i < nargs && i < 6; ++i) {
@@ -285,16 +301,20 @@ ImpValue GenCode::visit(FCallExp* exp) {
 
 
 ImpValue GenCode::visit(InitValue *iv) {
+    //cout << "initvalue" << endl;
     return ImpValue();
 }
 
 ImpValue GenCode::visit(NumberExp* exp) {
+    //cout << "number" << endl;
     out << "    movq $" << exp->value << ", %rax\n";
     return ImpValue();
 }
 
 ImpValue GenCode::visit(IdentifierExp* exp) {
+    //cout << "ImpValue GenCode::visit(IdentifierExp* exp) {" << endl;
     out << "    movq " << memoria[exp->name] << "(%rbp), %rax\n";
+    //cout << "fin" << endl;
     return ImpValue();
 }
 
@@ -309,79 +329,72 @@ ImpValue GenCode::visit(BinaryExp* exp) {
         out << "    subq $1, %rax\n";
         return ImpValue();
     }
-
+    if (exp->op == NOT_OP && exp->right == nullptr) {
+        exp->left->accept(this);
+        out <<
+            "    cmpq $0, %rax\n"
+            "    movl $0, %eax\n"
+            "    sete %al\n"
+            "    movzbq %al, %rax\n";
+        return ImpValue();
+    }
     exp->left->accept(this);
     out << "    pushq %rax\n";
     exp->right->accept(this);
-    out << "    movq %rax, %rdx\n";
+    out << "    movq %rax, %rcx\n";   // Usa %rcx como temporal
     out << "    popq %rax\n";
     switch (exp->op) {
         case PLUS_OP:
-            out << "    addq %rdx, %rax\n"; break;
+            out << "    addq %rcx, %rax\n"; break;
         case MINUS_OP:
-            out << "    subq %rdx, %rax\n"; break;
+            out << "    subq %rcx, %rax\n"; break;
         case MUL_OP:
-            out << "    imulq %rdx, %rax\n"; break;
+            out << "    imulq %rcx, %rax\n"; break;
         case DIV_OP:
-            out << "    cqto\n";
-            out << "    idivq %rdx\n";
-            break;
+            out << "    cqto\n"
+                   "    idivq %rcx\n"; break;
         case LT_OP:
-            out << "    cmpq %rdx, %rax\n"
+            out << "    cmpq %rcx, %rax\n"
                    "    movl $0, %eax\n"
                    "    setl %al\n"
-                   "    movzbq %al, %rax\n";
-            break;
+                   "    movzbq %al, %rax\n"; break;
         case LET_OP:
-            out << "    cmpq %rdx, %rax\n"
+            out << "    cmpq %rcx, %rax\n"
                    "    movl $0, %eax\n"
                    "    setle %al\n"
-                   "    movzbq %al, %rax\n";
-            break;
+                   "    movzbq %al, %rax\n"; break;
         case GT_OP:
-            out << "    cmpq %rdx, %rax\n"
+            out << "    cmpq %rcx, %rax\n"
                    "    movl $0, %eax\n"
                    "    setg %al\n"
-                   "    movzbq %al, %rax\n";
-            break;
+                   "    movzbq %al, %rax\n"; break;
         case GET_OP:
-            out << "    cmpq %rdx, %rax\n"
+            out << "    cmpq %rcx, %rax\n"
                    "    movl $0, %eax\n"
                    "    setge %al\n"
-                   "    movzbq %al, %rax\n";
-            break;
+                   "    movzbq %al, %rax\n"; break;
         case EQ_OP:
-            out << "    cmpq %rdx, %rax\n"
+            out << "    cmpq %rcx, %rax\n"
                    "    movl $0, %eax\n"
                    "    sete %al\n"
-                   "    movzbq %al, %rax\n";
-            break;
+                   "    movzbq %al, %rax\n"; break;
         case DIFF_OP:
-            out << "    cmpq %rdx, %rax\n"
+            out << "    cmpq %rcx, %rax\n"
                    "    movl $0, %eax\n"
                    "    setne %al\n"
-                   "    movzbq %al, %rax\n";
-            break;
+                   "    movzbq %al, %rax\n"; break;
         case AND_OP:
             out << "    setne %al\n"
                    "    movzbq %al, %rax\n"
-                   "    setne %dl\n"
-                   "    movzbq %dl, %rdx\n"
-                   "    andq %rdx, %rax\n";
-            break;
+                   "    setne %cl\n"
+                   "    movzbq %cl, %rcx\n"
+                   "    andq %rcx, %rax\n"; break;
         case OR_OP:
             out << "    setne %al\n"
                    "    movzbq %al, %rax\n"
-                   "    setne %dl\n"
-                   "    movzbq %dl, %rdx\n"
-                   "    orq %rdx, %rax\n";
-            break;
-        case NOT_OP:
-            out << "    cmpq $0, %rax\n"
-                   "    movl $0, %eax\n"
-                   "    sete %al\n"
-                   "    movzbq %al, %rax\n";
-            break;
+                   "    setne %cl\n"
+                   "    movzbq %cl, %rcx\n"
+                   "    orq %rcx, %rax\n"; break;
         default:
             break;
     }
