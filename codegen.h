@@ -1,19 +1,21 @@
 #ifndef COMPILA_PROJECT_CODEGEN_HH
 #define COMPILA_PROJECT_CODEGEN_HH
 
-#include "visitor.h"
+#include <eval_visitor.h>
+
 using namespace std;
 #include <map>
 class GenCode : public Visitor {
 private:
-    std::ostream& out;
+    Environment env;
+    ostream& out;
     unordered_map<string, int> memoria;
     // para arrays
     unordered_map<string, int> tamaniosArray; // total elementos
     unordered_map<string, vector<int>> dimsArray;// dimensiones
     // para strings
-    std::map<std::string, std::string> stringLiterals;      // label → contenido
-    std::map<std::string, std::string> literalToLabel;      // contenido → label
+    map<string, string> stringLiterals;      // label → contenido
+    map<string, string> literalToLabel;      // contenido → label
      int stringLabelCounter = 0;
     bool primeraPasada = true;
     std::string registrarStringLiteral(const std::string& val);

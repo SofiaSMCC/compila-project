@@ -146,9 +146,9 @@ void GenCode::visit(AssignStatement* stm) {
 }
 
 void GenCode::visit(PrintStatement* stm) {
-    if(stm->e) {
-        auto lab=registrarStringLiteral(stm->e->accept(this).string_value);
-           if (!primeraPasada){
+    if(stm->e!=nullptr and stm->e->accept(this).type=="char") {
+            auto lab=registrarStringLiteral(stm->e->accept(this).string_value);
+            if (!primeraPasada){
             out << "    leaq " <<lab<< "(%rip), %rdi\n";
             out << "    call puts@PLT\n";
         }
@@ -274,7 +274,7 @@ ImpValue GenCode::visit(StringLiteral *exp) {
     if (!primeraPasada) {
         out << "    leaq " << label << "(%rip), %rax\n";
     }
-    return ImpValue();
+    return ImpValue("char",0,false,exp->value);
 }
 ImpValue GenCode::visit(BoolExp *exp) {
        if (!primeraPasada){out << "    movq $" << (exp->value ? 1 : 0) << ", %rax\n";}
@@ -326,14 +326,15 @@ ImpValue GenCode::visit(NumberExp* exp) {
        if (!primeraPasada){
         out << "    movq $" << exp->value << ", %rax\n";
     }
-    return ImpValue();
+    return ImpValue("int",exp->value,0,"");
 }
 
 ImpValue GenCode::visit(IdentifierExp* exp) {
        if (!primeraPasada){
         out << "    movq " << memoria[exp->name] << "(%rbp), %rax\n";
     }
-    return ImpValue();
+    cout<<env.lookup(exp->name).second;
+    return ImpValue("char",0,false,stringLiterals[exp->name]);
 }
 
 ImpValue GenCode::visit(BinaryExp* exp) {

@@ -1,9 +1,7 @@
 #ifndef COMPILA_PROJECT_EVAL_VISITOR_H
 #define COMPILA_PROJECT_EVAL_VISITOR_H
-
 #include "visitor.h"
 #include "environment.h"
-
 class EVALVisitor : public Visitor {
 public:
     unordered_map<std::string, FunDec*> funciones;
@@ -12,7 +10,6 @@ public:
     ImpValue return_value;
     bool return_encountered = false;
     void ejecutar(Program* program);
-
     ImpValue visit(BinaryExp* exp) override;
     ImpValue visit(NumberExp* exp) override;
     ImpValue visit(BoolExp* exp) override;
