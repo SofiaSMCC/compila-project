@@ -24,7 +24,9 @@ string GenCode::registrarStringLiteral(const std::string& val) {
 
 void GenCode::generar(Program* program) {
     primeraPasada = true;
+    env.add_level();
     program->accept(this);
+    env.remove_level();
     out << ".data\n";
     out << "print_fmt: .string \"%d\\n\"\n";
     for (const auto& entry : stringLiterals) {
@@ -34,9 +36,12 @@ void GenCode::generar(Program* program) {
     out << ".text\n";
     out << " .globl main\n";
     primeraPasada = false;
+    env.add_level();
     program->accept(this);
+    env.remove_level();
+    out << ".section .note.GNU-stack,\"\",@progbits\n";
 
-    out << ".section .note.GNU-stack,\"\",@progbits\n";}
+}
 
 void GenCode::visit(Program* program) {
     if (program->func) program->func->accept(this);
@@ -78,6 +83,14 @@ void GenCode::visit(FunDec* f) {
 
 void GenCode::visit(VarDec* stm) {
     for (auto var : stm->vars) {
+        if (!var->dimList.empty() && var->dimList.back() == nullptr && stm->type == "char" && var->iv && !var->iv->isList) {
+            StringLiteral* str_lit = dynamic_cast<StringLiteral*>(var->iv->value);
+            if (!str_lit) {
+                cout << "Error: se esperaba un literal string en la inicialización de char[]\n";
+                exit(1);
+            }
+            env.add_var(var->id, str_lit->value, "char");
+        }
         if (var->iv && var->iv->value) {
             auto strLiteral = dynamic_cast<StringLiteral*>(var->iv->value);
             if (strLiteral) {
@@ -146,7 +159,7 @@ void GenCode::visit(AssignStatement* stm) {
 }
 
 void GenCode::visit(PrintStatement* stm) {
-    if(stm->e!=nullptr and stm->e->accept(this).type=="char") {
+    if(stm->e->accept(this).type=="char") {
             auto lab=registrarStringLiteral(stm->e->accept(this).string_value);
             if (!primeraPasada){
             out << "    leaq " <<lab<< "(%rip), %rdi\n";
@@ -274,6 +287,7 @@ ImpValue GenCode::visit(StringLiteral *exp) {
     if (!primeraPasada) {
         out << "    leaq " << label << "(%rip), %rax\n";
     }
+
     return ImpValue("char",0,false,exp->value);
 }
 ImpValue GenCode::visit(BoolExp *exp) {
@@ -333,8 +347,21 @@ ImpValue GenCode::visit(IdentifierExp* exp) {
        if (!primeraPasada){
         out << "    movq " << memoria[exp->name] << "(%rbp), %rax\n";
     }
-    cout<<exp->accept(this).type;
-    return ImpValue("char",0,false,stringLiterals[exp->name]);
+    string t = env.lookup_type(exp->name);
+
+    if (t == "int") {
+        int n = env.lookup(exp->name).first;
+        return ImpValue(t, n, false, "");
+    }
+    else if (t == "bool") {
+        bool v = env.lookup(exp->name).first;
+        return ImpValue(t, 0, v, "");
+    }
+    else if (t == "char") {
+        string s = env.lookup(exp->name).second;
+        return ImpValue(t, 0, false, s);
+    }
+    return ImpValue("char",0,false,exp->name);
 }
 
 ImpValue GenCode::visit(BinaryExp* exp) {

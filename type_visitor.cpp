@@ -250,7 +250,7 @@ void TypeVisitor::visit(VarDec* vd) {
             vector<int> dims;
             for (auto nexp : i->dimList) {
                if(nexp==nullptr) {
-                   env->add_var("x","char");
+                   env->add_var(i->id,"char");
                    return;
                }
                 dims.push_back(nexp->value);

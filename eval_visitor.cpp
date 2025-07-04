@@ -435,7 +435,7 @@ void EVALVisitor::visit(VarDec *stm) {
                 }
                 dims.push_back(nexp->value);
             }
-            std::vector<ImpValue> valores;
+            vector<ImpValue> valores;
             if (i->iv && i->iv->isList) {
                 recolectaValores(i->iv, valores, this);
             }
