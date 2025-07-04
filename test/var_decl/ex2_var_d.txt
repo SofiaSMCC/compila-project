@@ -1,0 +1,9 @@
+int main() {
+    bool a, b;
+    a = true;
+    b = false;
+    a = false;
+    printf("%d\n", a || true);
+    printf("%d\n", b);
+    return 0;
+}

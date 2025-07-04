@@ -1,0 +1,11 @@
+#include <stdio.h>
+
+int suma(int x, int y) {
+    return x + y;
+}
+
+int main() {
+    int resultado = suma(3, 4);
+    printf("%d\n", resultado);
+    return 0;
+}
