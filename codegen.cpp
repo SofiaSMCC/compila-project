@@ -159,19 +159,19 @@ void GenCode::visit(PrintStatement* stm) {
             "    andq $0xf, %rcx\n"
             "    cmpq $0, %rcx\n"
             "    je .aligned_printf_" << labelcont << "\n"
-                                                      "    subq $8, %rsp\n"
-                                                      "    movq %rax, %rsi\n"
-                                                      "    leaq print_fmt(%rip), %rdi\n"
-                                                      "    movl $0, %eax\n"
-                                                      "    call printf@PLT\n"
-                                                      "    addq $8, %rsp\n"
-                                                      "    jmp .after_printf_" << labelcont << "\n"
-                                                                                               ".aligned_printf_" << labelcont << ":\n"
-                                                                                                                                  "    movq %rax, %rsi\n"
-                                                                                                                                  "    leaq print_fmt(%rip), %rdi\n"
-                                                                                                                                  "    movl $0, %eax\n"
-                                                                                                                                  "    call printf@PLT\n"
-                                                                                                                                  ".after_printf_" << labelcont << ":\n";
+            "    subq $8, %rsp\n"
+            "    movq %rax, %rsi\n"
+            "    leaq print_fmt(%rip), %rdi\n"
+            "    movl $0, %eax\n"
+            "    call printf@PLT\n"
+            "    addq $8, %rsp\n"
+            "    jmp .after_printf_" << labelcont << "\n"
+            ".aligned_printf_" << labelcont << ":\n"
+            "    movq %rax, %rsi\n"
+            "    leaq print_fmt(%rip), %rdi\n"
+            "    movl $0, %eax\n"
+            "    call printf@PLT\n"
+            ".after_printf_" << labelcont << ":\n";
         labelcont++;
     }
 }
