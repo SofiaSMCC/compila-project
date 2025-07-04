@@ -3,7 +3,7 @@
 
 #include "visitor.h"
 using namespace std;
-
+#include <map>
 class GenCode : public Visitor {
 private:
     std::ostream& out;
@@ -12,8 +12,8 @@ private:
     unordered_map<string, int> tamaniosArray; // total elementos
     unordered_map<string, vector<int>> dimsArray;// dimensiones
     // para strings
-    int stringLiteralCount = 0;
-    vector<string> stringLiterals;
+    int stringLabelCounter = 0;
+    map<std::string, std::string> stringLiterals;
     int offset = -8;
     int labelcont = 0;
     bool entornoFuncion = false;
