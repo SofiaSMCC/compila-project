@@ -156,6 +156,11 @@ void GenCode::visit(PrintStatement* stm) {
                 "    call printf@PLT\n";
         }
     }
+     if(stm->e) {
+             out << "    leaq " <<"str_0"<< "(%rip), %rdi\n";
+             out << "    call puts@PLT\n";
+
+     }
 }
 
 void GenCode::visit(ReturnStatement* stm) {
