@@ -5,7 +5,7 @@ int main(){
     x = 1;
     y = 10;
     x = 20;
-    printf(" %d\n", x);
+    printf(" %d\n", (x*4)+3);
     printf(" %d\n", y);
     return 0;
 }

@@ -1,0 +1,8 @@
+#include <stdio.h>
+
+int main() {
+    int a = 5, b = 2, c = 7;
+    bool res = ((a + b) * c == 49) || (b - c < 0);
+    printf("%d\n", res);
+    return 0;
+}

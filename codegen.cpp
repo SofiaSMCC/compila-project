@@ -1,5 +1,46 @@
 #include "codegen.h"
 
+// permite manejar variables locales
+void GenCode::pushScope() {
+    scopeStack.push(unordered_map<string, int>());
+    offsetStack.push(offset);
+}
+
+// elimina del mapa global las variables
+void GenCode::popScope() {
+    if (!scopeStack.empty()) {
+        auto currentScope = scopeStack.top();
+        scopeStack.pop();
+        int previousOffset = offsetStack.top();
+        offsetStack.pop();
+        int toFree = previousOffset - offset;
+        if (!scopeStack.empty() && toFree > 0) {
+            out << "    addq $" << toFree << ", %rsp\n";
+        }
+        offset = previousOffset;
+        for (auto& pair : currentScope) {
+            memoria.erase(pair.first);
+        }
+    }
+}
+// declara una nueva variable local y
+// evita declarar dos veces la misma variable
+void GenCode::declareVariable(const string& name, int size) {
+    if (!scopeStack.empty() && scopeStack.top().count(name)) return; // No declarar dos veces
+    memoria[name] = offset;
+    isArray[name] = (size > 1);
+    offset -= size * 8;
+    if (!scopeStack.empty()) {
+        scopeStack.top()[name] = memoria[name];
+    }
+    out << "    subq $" << (size * 8) << ", %rsp\n";
+}
+
+//  verifica si una variable ya está declarada
+bool GenCode::isVariableInCurrentScope(const string& name) {
+    return !scopeStack.empty() && scopeStack.top().count(name);
+}
+
 void GenCode::generar(Program* program) {
     out << ".data\n";
     out << "print_fmt: .string \"%d\\n\"\n";
@@ -19,7 +60,6 @@ void GenCode::visit(FunDec* f) {
     offset = -8;
     nombreFuncion = f->nombre;
     std::vector<std::string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
-    out << " .globl "<< f->nombre << std::endl;
     out << f->nombre <<":" << std::endl;
     out << "    pushq %rbp\n";
     out << "    movq %rsp, %rbp\n";
@@ -47,25 +87,25 @@ void GenCode::visit(FunDec* f) {
 
 void GenCode::visit(VarDec* stm) {
     for (auto var : stm->vars) {
-        // Solo 1 dim:
+        if (isVariableInCurrentScope(var->id)) continue;
+
         int size = var->dimList.empty() ? 1 : var->dimList.front()->value;
-        memoria[var->id] = offset;
-        offset -= size * 8;
-        out << "    subq $" << (size * 8) << ", %rsp\n";
+        declareVariable(var->id, size);
 
         for (int idx = 0; idx < size; ++idx) {
-            out << "    movq $0, " << (memoria[var->id] + idx * 8) << "(%rbp)\n";
+            int elementOffset = memoria[var->id] - (idx * 8);
+            out << "    movq $0, " << elementOffset << "(%rbp)\n";
         }
 
         if (var->iv && var->iv->isList) {
             int idx = 0;
             for (auto val : var->iv->list) {
                 val->value->accept(this);
-                out << "    movq %rax, " << (memoria[var->id] + idx*8) << "(%rbp)\n";
+                int elementOffset = memoria[var->id] - (idx * 8);
+                out << "    movq %rax, " << elementOffset << "(%rbp)\n";
                 idx++;
             }
-        }
-        else if (var->iv && !var->iv->isList) {
+        } else if (var->iv && !var->iv->isList) {
             var->iv->value->accept(this);
             out << "    movq %rax, " << memoria[var->id] << "(%rbp)\n";
         }
@@ -73,12 +113,14 @@ void GenCode::visit(VarDec* stm) {
 }
 
 void GenCode::visit(Body* b) {
+    pushScope();
     if (b->vardecs){
         b->vardecs->accept(this);
     }
     if (b->slist){
         b->slist->accept(this);
     }
+    popScope();
 }
 
 void GenCode::visit(VarDecList* stm) {
@@ -96,30 +138,43 @@ void GenCode::visit(StatementList* stm) {
 }
 
 void GenCode::visit(AssignStatement* stm) {
-    //cout << "assign" << endl;
     if (!stm->lvalue->indices.empty()) {
-        stm->lvalue->indices[0]->accept(this);
-        out << "    movq %rax, %rcx\n";
+        stm->lvalue->indices[0]->accept(this);  // Get index into %rax
+        out << "    movq %rax, %rdx\n";
+        out << "    negq %rdx\n";
+        out << "    imulq $8, %rdx\n";
+        out << "    addq $" << memoria[stm->lvalue->id] << ", %rdx\n";
         stm->rhs->accept(this);
-        out << "    movq %rax, " << memoria[stm->lvalue->id] << "(%rbp, %rcx, 8)\n";
+        out << "    movq %rax, (%rbp, %rdx)\n";
     } else {
         stm->rhs->accept(this);
         out << "    movq %rax, " << memoria[stm->lvalue->id] << "(%rbp)\n";
     }
 }
-
 void GenCode::visit(PrintStatement* stm) {
     for (size_t i = 0; i < stm->args.size(); ++i) {
         stm->args[i]->accept(this);  // Resultado en %rax
         out <<
+            "    movq %rsp, %rcx\n"
+            "    andq $0xf, %rcx\n"
+            "    cmpq $0, %rcx\n"
+            "    je .aligned_printf_" << labelcont << "\n"
+            "    subq $8, %rsp\n"
             "    movq %rax, %rsi\n"
             "    leaq print_fmt(%rip), %rdi\n"
             "    movl $0, %eax\n"
-            "    call printf@PLT\n";
+            "    call printf@PLT\n"
+            "    addq $8, %rsp\n"
+            "    jmp .after_printf_" << labelcont << "\n"
+            ".aligned_printf_" << labelcont << ":\n"
+            "    movq %rax, %rsi\n"
+            "    leaq print_fmt(%rip), %rdi\n"
+            "    movl $0, %eax\n"
+            "    call printf@PLT\n"
+            ".after_printf_" << labelcont << ":\n";
+        labelcont++;
     }
 }
-
-
 
 void GenCode::visit(ReturnStatement* stm) {
     //cout << "return" << endl;
@@ -177,11 +232,11 @@ void GenCode::visit(IfStatement *stmt) {
     out << "endif_" << endif_label << ":\n";
 }
 
-void GenCode::visit(ForStatement *stmt) {
-    if (memoria.count(stmt->id) == 0) {
-        memoria[stmt->id] = offset;
-        offset -= 8;
-        out << "    subq $8, %rsp\n";
+void GenCode::visit(ForStatement* stmt) {
+    pushScope();
+
+    if (!isVariableInCurrentScope(stmt->id)) {
+        declareVariable(stmt->id, 1);
     }
 
     stmt->start->accept(this);
@@ -191,18 +246,22 @@ void GenCode::visit(ForStatement *stmt) {
     int end_label = labelcont++;
 
     out << "for_" << loop_label << ":\n";
+    out << "    movq " << memoria[stmt->id] << "(%rbp), %rax\n";
     stmt->condition->accept(this);
     out << "    cmpq $0, %rax\n";
     out << "    je endfor_" << end_label << "\n";
 
     stmt->b->accept(this);
-    stmt->step->accept(this);
 
+    out << "    movq " << memoria[stmt->id] << "(%rbp), %rcx\n";
+    stmt->step->accept(this);
     out << "    movq %rax, " << memoria[stmt->id] << "(%rbp)\n";
+
     out << "    jmp for_" << loop_label << "\n";
     out << "endfor_" << end_label << ":\n";
-}
 
+    popScope();
+}
 void GenCode::visit(FCallStatement *stm) {
     //cout << "f call stm" << endl;
     stm->call->accept(this);
@@ -213,7 +272,10 @@ void GenCode::visit(DoWhileStatement *stm) {
     int end_label = labelcont++;
 
     out << "dowhile_" << start_label << ":\n";
+
     stm->b->accept(this);
+
+
     stm->condition->accept(this);
     out << "    cmpq $0, %rax\n";
     out << "    jne dowhile_" << start_label << "\n";
@@ -244,7 +306,10 @@ ImpValue GenCode::visit(BoolExp *exp) {
 ImpValue GenCode::visit(ArrayAccessExp *exp) {
     exp->indices[0]->accept(this);     // %rax = i
     out << "    movq %rax, %rdx\n";
-    out << "    movq " << memoria[exp->arrayName] << "(%rbp, %rdx, 8), %rax\n";
+    out << "    negq %rdx\n";
+    out << "    imulq $8, %rdx\n";
+    out << "    addq $" << memoria[exp->arrayName] << ", %rdx\n";
+    out << "    movq (%rbp, %rdx), %rax\n";
     return ImpValue();
 }
 
@@ -317,47 +382,50 @@ ImpValue GenCode::visit(BinaryExp* exp) {
         return ImpValue();
     }
     exp->left->accept(this);
-    out << "    pushq %rax\n";
+    out << "    movq %rax, %rcx\n";
     exp->right->accept(this);
-    out << "    movq %rax, %rcx\n";   // Usa %rcx como temporal
-    out << "    popq %rax\n";
+
     switch (exp->op) {
         case PLUS_OP:
             out << "    addq %rcx, %rax\n"; break;
         case MINUS_OP:
-            out << "    subq %rcx, %rax\n"; break;
+            out << "    movq %rax, %rdx\n"
+                   "    movq %rcx, %rax\n"
+                   "    subq %rdx, %rax\n"; break;
         case MUL_OP:
             out << "    imulq %rcx, %rax\n"; break;
         case DIV_OP:
-            out << "    cqto\n"
-                   "    idivq %rcx\n"; break;
+            out << "    movq %rax, %rdx\n"
+                   "    movq %rcx, %rax\n"
+                   "    cqto\n"
+                   "    idivq %rdx\n"; break;
         case LT_OP:
-            out << "    cmpq %rcx, %rax\n"
+            out << "    cmpq %rax, %rcx\n"
                    "    movl $0, %eax\n"
                    "    setl %al\n"
                    "    movzbq %al, %rax\n"; break;
         case LET_OP:
-            out << "    cmpq %rcx, %rax\n"
+            out << "    cmpq %rax, %rcx\n"
                    "    movl $0, %eax\n"
                    "    setle %al\n"
                    "    movzbq %al, %rax\n"; break;
         case GT_OP:
-            out << "    cmpq %rcx, %rax\n"
+            out << "    cmpq %rax, %rcx\n"
                    "    movl $0, %eax\n"
                    "    setg %al\n"
                    "    movzbq %al, %rax\n"; break;
         case GET_OP:
-            out << "    cmpq %rcx, %rax\n"
+            out << "    cmpq %rax, %rcx\n"
                    "    movl $0, %eax\n"
                    "    setge %al\n"
                    "    movzbq %al, %rax\n"; break;
         case EQ_OP:
-            out << "    cmpq %rcx, %rax\n"
+            out << "    cmpq %rax, %rcx\n"
                    "    movl $0, %eax\n"
                    "    sete %al\n"
                    "    movzbq %al, %rax\n"; break;
         case DIFF_OP:
-            out << "    cmpq %rcx, %rax\n"
+            out << "    cmpq %rax, %rcx\n"
                    "    movl $0, %eax\n"
                    "    setne %al\n"
                    "    movzbq %al, %rax\n"; break;

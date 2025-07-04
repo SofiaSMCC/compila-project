@@ -2,25 +2,39 @@
 #define COMPILA_PROJECT_CODEGEN_HH
 
 #include "visitor.h"
+#include "stack"
 using namespace std;
 
 class GenCode : public Visitor {
 private:
-    std::ostream& out;
+    ostream &out;
     unordered_map<string, int> memoria;
-    // para arrays
-    unordered_map<string, int> tamaniosArray; // total elementos
-    unordered_map<string, vector<int>> dimsArray;// dimensiones
-    // para strings
-    int stringLiteralCount = 0;
+
+    // arrays
+    unordered_map<string, int> tamaniosArray;     // total elementos
+    unordered_map<string, vector<int>> dimsArray; // dimensiones
+    unordered_map<string, bool> isArray;
+
+    // strings
     vector<string> stringLiterals;
+
+    // manejar memoria
+    stack<unordered_map<string, int>> scopeStack;
+    stack<int> offsetStack;
+
     int offset = -8;
     int labelcont = 0;
     bool entornoFuncion = false;
+    int numeroParametros = 0;
     string nombreFuncion;
+
 public:
     GenCode(ostream& out) : out(out) {}
     void generar(Program* program);
+    void pushScope();
+    void popScope();
+    void declareVariable(const string& name, int size);
+    bool isVariableInCurrentScope(const string& name);
 
     ImpValue visit(BinaryExp* exp) override;
     ImpValue visit(NumberExp* exp) override;

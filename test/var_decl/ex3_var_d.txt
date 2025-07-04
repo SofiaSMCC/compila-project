@@ -1,0 +1,10 @@
+int main() {
+    int a, b;
+    bool z = true;
+    bool j = false;
+    a = 5;
+    b = 4;
+    printf("%d\n", a*b);
+    printf("%d\n", !(z && j));
+    return 0;
+}

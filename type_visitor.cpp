@@ -3,6 +3,10 @@
 #include "type_visitor.h"
 string tiport;
 bool InitValueType(InitValue* iv, const std::string& expectedType, TypeVisitor* visitor) {
+    if (iv == nullptr) {
+        return true; // no initialization is valid
+    }
+
     if (iv->isList) {
         for (auto elem : iv->list) {
             if (!InitValueType(elem, expectedType, visitor))
@@ -298,13 +302,14 @@ void TypeVisitor::visit(VarDec* vd) {
             vector<int> dims;
             for (auto nexp : i->dimList) {
                 dims.push_back(nexp->value);
-                if(!InitValueType(i->iv,t,this)) {
-                    cout << "Error de tipo en inicialización de array: '" << i->id
-                     << "'. Elemento no es de tipo '" << t << "'" << endl;
-                    exit(1);
-                }
-
             }
+
+            if (i->iv && !InitValueType(i->iv, t, this)) {
+                cout << "Error de tipo en inicialización de array: '" << i->id
+                     << "'. Elemento no es de tipo '" << t << "'" << endl;
+                exit(1);
+            }
+
             vector<int> idxs;
             declara_array_type(i->id, dims, 0, idxs, t, env);
         } else if (i->iv) {
@@ -315,7 +320,6 @@ void TypeVisitor::visit(VarDec* vd) {
             }
             env->add_var(i->id, t);
         }
-
         else {
             env->add_var(i->id, t);
         }

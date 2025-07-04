@@ -1,0 +1,24 @@
+#include <stdio.h>
+
+int main() {
+    int numarr[5];
+
+    numarr[0] = 10;
+    numarr[1] = 20;
+    numarr[2] = 30;
+    numarr[3] = 40;
+    numarr[4] = 50;
+
+    for (int i = 0; i < 5; i++) {
+        numarr[i] = numarr[i] * 2;
+        printf("%d\n", numarr[i]);
+    }
+
+    int sum = 0;
+    for (int i = 0; i < 5; i++) {
+        sum = sum + numarr[i];
+    }
+    printf("%d\n", sum);
+
+    return 0;
+}
