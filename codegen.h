@@ -14,8 +14,8 @@ private:
     // para strings
     std::map<std::string, std::string> stringLiterals;      // label → contenido
     std::map<std::string, std::string> literalToLabel;      // contenido → label
-    int stringLabelCounter = 0;
-
+     int stringLabelCounter = 0;
+    bool primeraPasada = true;
     std::string registrarStringLiteral(const std::string& val);
     std::string escapeString(const std::string& raw);
     int offset = -8;

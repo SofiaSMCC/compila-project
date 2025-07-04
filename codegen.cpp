@@ -14,32 +14,33 @@ std::string GenCode::escapeString(const std::string& raw) {
     }
     return out;
 }
-std::string GenCode::registrarStringLiteral(const std::string& val) {
+string GenCode::registrarStringLiteral(const std::string& val) {
     if (literalToLabel.count(val)) return literalToLabel[val];
 
-    std::string label = "str_" + std::to_string(stringLabelCounter++);
+    string label = "str_" + to_string(stringLabelCounter++);
     literalToLabel[val] = label;
     stringLiterals[label] = val;
     return label;
 }
+
 void GenCode::generar(Program* program) {
+    primeraPasada = true;
     program->accept(this);
 
-    // Emite la sección de datos
+    // Emitir sección de datos
     out << ".data\n";
     out << "print_fmt: .string \"%d\\n\"\n";
     for (const auto& entry : stringLiterals) {
         out << entry.first << ": .string \"" << escapeString(entry.second) << "\"\n";
     }
 
-    // Código
+    // Segunda pasada: emitir código
     out << ".text\n";
     out << " .globl main\n";
-    program->func->accept(this);
+    primeraPasada = false;
+    program->accept(this);
 
-    // Stack marker
-    out << ".section .note.GNU-stack,\"\",@progbits\n";
-}
+    out << ".section .note.GNU-stack,\"\",@progbits\n";}
 
 void GenCode::visit(Program* program) {
     if (program->func) program->func->accept(this);
@@ -141,10 +142,15 @@ void GenCode::visit(AssignStatement* stm) {
 }
 
 void GenCode::visit(PrintStatement* stm) {
+    if(stm->e) {
+        auto lab=registrarStringLiteral(stm->e->accept(this).string_value);
+        out << "    leaq " <<lab<< "(%rip), %rdi\n";
+        out << "    call puts@PLT\n";
+
+    }
     for (auto arg : stm->args) {
-        auto strLit = dynamic_cast<StringLiteral*>(arg);
-        if (strLit) {
-            string label = registrarStringLiteral(strLit->value);
+        if (arg->accept(this).type=="char") {
+            auto label=registrarStringLiteral(arg->accept(this).string_value);
             out << "    leaq " << label << "(%rip), %rdi\n";
             out << "    call puts@PLT\n";
         } else {
@@ -156,11 +162,7 @@ void GenCode::visit(PrintStatement* stm) {
                 "    call printf@PLT\n";
         }
     }
-     if(stm->e) {
-             out << "    leaq " <<"str_0"<< "(%rip), %rdi\n";
-             out << "    call puts@PLT\n";
 
-     }
 }
 
 void GenCode::visit(ReturnStatement* stm) {
@@ -252,7 +254,9 @@ void GenCode::visit(FunDecList *fdl) {
 
 ImpValue GenCode::visit(StringLiteral *exp) {
     string label = registrarStringLiteral(exp->value);
-    out << "    leaq " << label << "(%rip), %rax\n";
+    if (!primeraPasada) {
+        out << "    leaq " << label << "(%rip), %rax\n";
+    }
     return ImpValue();
 }
 ImpValue GenCode::visit(BoolExp *exp) {
