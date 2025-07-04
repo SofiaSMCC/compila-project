@@ -1,7 +1,5 @@
 #include "codegen.h"
-
-// Asume que 'out' es std::ostream&
-std::string GenCode::escapeString(const std::string& raw) {
+string GenCode::escapeString(const std::string& raw) {
     std::string out;
     for (char c : raw) {
         switch (c) {
@@ -32,7 +30,7 @@ void GenCode::generar(Program* program) {
     for (const auto& entry : stringLiterals) {
         out << entry.first << ": .string \"" << escapeString(entry.second) << "\"\n";
     }
-    // Segunda pasada: emitir código
+    //emitir código
     out << ".text\n";
     out << " .globl main\n";
     primeraPasada = false;
@@ -52,7 +50,7 @@ void GenCode::visit(FunDec* f) {
     memoria.clear();
     offset = -8;
     nombreFuncion = f->nombre;
-    std::vector<std::string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+    vector<string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
     if (!primeraPasada){
         out << " .globl "<< f->nombre << "\n";
         out << f->nombre <<":\n";
@@ -83,7 +81,7 @@ void GenCode::visit(FunDec* f) {
 
 void GenCode::visit(VarDec* stm) {
     for (auto var : stm->vars) {
-        if (!var->dimList.empty() && var->dimList.back() == nullptr && stm->type == "char" && var->iv && !var->iv->isList) {
+        if (!var->dimList.empty() and var->dimList.back() == nullptr and stm->type == "char" and var->iv and !var->iv->isList) {
             StringLiteral* str_lit = dynamic_cast<StringLiteral*>(var->iv->value);
             if (!str_lit) {
                 cout << "Error: se esperaba un literal string en la inicialización de char[]\n";
@@ -114,7 +112,7 @@ void GenCode::visit(VarDec* stm) {
                 out << "    movq $0, " << (memoria[var->id] + idx * 8) << "(%rbp)\n";
             }
         }
-        if (var->iv && var->iv->isList) {
+        if (var->iv and var->iv->isList) {
             int idx = 0;
             for (auto val : var->iv->list) {
                 val->value->accept(this);
@@ -122,7 +120,7 @@ void GenCode::visit(VarDec* stm) {
                 idx++;
             }
         }
-        else if (var->iv && !var->iv->isList) {
+        else if (var->iv and !var->iv->isList) {
             var->iv->value->accept(this);
                if (!primeraPasada){out << "    movq %rax, " << memoria[var->id] << "(%rbp)\n";}
         }
@@ -159,29 +157,28 @@ void GenCode::visit(AssignStatement* stm) {
 }
 
 void GenCode::visit(PrintStatement* stm) {
-    if(stm->e->accept(this).type=="char") {
-            auto lab=registrarStringLiteral(stm->e->accept(this).string_value);
-            if (!primeraPasada){
-            out << "    leaq " <<lab<< "(%rip), %rdi\n";
+    ImpValue val = stm->e->accept(this);
+    if (val.type == "char") {
+        auto lab = registrarStringLiteral(val.string_value);
+        if (!primeraPasada){
+            out << "    leaq " << lab << "(%rip), %rdi\n";
             out << "    call puts@PLT\n";
         }
-
     }
     for (auto arg : stm->args) {
-        if (arg->accept(this).type=="char") {
-            auto label=registrarStringLiteral(arg->accept(this).string_value);
-               if (!primeraPasada){
+        ImpValue val = arg->accept(this);
+        if (val.type == "char") {
+            auto label = registrarStringLiteral(val.string_value);
+            if (!primeraPasada){
                 out << "    leaq " << label << "(%rip), %rdi\n";
                 out << "    call puts@PLT\n";
             }
         } else {
-            arg->accept(this);
-               if (!primeraPasada){
-                out <<
-                   "    movq %rax, %rsi\n"
-                   "    leaq print_fmt(%rip), %rdi\n"
-                   "    movl $0, %eax\n"
-                   "    call printf@PLT\n";
+            if (!primeraPasada){
+                out << "    movq %rax, %rsi\n"
+                       "    leaq print_fmt(%rip), %rdi\n"
+                       "    movl $0, %eax\n"
+                       "    call printf@PLT\n";
             }
         }
     }
@@ -211,7 +208,7 @@ void GenCode::visit(WhileStatement *stmt) {
 
 void GenCode::visit(IfStatement *stmt) {
     int endif_label = labelcont++;
-    std::vector<int> else_labels;
+    vector<int> else_labels;
     for (size_t i = 0; i < stmt->sent_if.size() - 1; ++i)
         else_labels.push_back(labelcont++);
     for (size_t i = 0; i < stmt->sent_if.size(); ++i) {
@@ -321,7 +318,7 @@ ImpValue GenCode::visit(LValue *exp) {
 
 ImpValue GenCode::visit(FCallExp* exp) {
     int nargs = exp->argumentos.size();
-    std::vector<std::string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+    vector<std::string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
     for (int i = 0; i < nargs && i < 6; ++i) {
         exp->argumentos[i]->accept(this);
            if (!primeraPasada){out << "    movq %rax, " << argRegs[i] << "\n";}
