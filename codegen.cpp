@@ -333,7 +333,7 @@ ImpValue GenCode::visit(IdentifierExp* exp) {
        if (!primeraPasada){
         out << "    movq " << memoria[exp->name] << "(%rbp), %rax\n";
     }
-    cout<<env.lookup(exp->name).second;
+    cout<<exp->accept(this).type;
     return ImpValue("char",0,false,stringLiterals[exp->name]);
 }
 
