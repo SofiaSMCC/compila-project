@@ -1,26 +1,43 @@
 #include "codegen.h"
 
 // Asume que 'out' es std::ostream&
+std::string GenCode::escapeString(const std::string& raw) {
+    std::string out;
+    for (char c : raw) {
+        switch (c) {
+            case '\n': out += "\\n"; break;
+            case '\t': out += "\\t"; break;
+            case '\"': out += "\\\""; break;
+            case '\\': out += "\\\\"; break;
+            default: out += c;
+        }
+    }
+    return out;
+}
+std::string GenCode::registrarStringLiteral(const std::string& val) {
+    if (literalToLabel.count(val)) return literalToLabel[val];
 
+    std::string label = "str_" + std::to_string(stringLabelCounter++);
+    literalToLabel[val] = label;
+    stringLiterals[label] = val;
+    return label;
+}
 void GenCode::generar(Program* program) {
+    program->accept(this);
+
+    // Emite la sección de datos
     out << ".data\n";
     out << "print_fmt: .string \"%d\\n\"\n";
     for (const auto& entry : stringLiterals) {
-        std::string escaped;
-        for (char c : entry.second) {
-            switch (c) {
-                case '\n': escaped += "\\n"; break;
-                case '\t': escaped += "\\t"; break;
-                case '\"': escaped += "\\\""; break;
-                case '\\': escaped += "\\\\"; break;
-                default: escaped += c; break;
-            }
-        }
-        out << entry.first << ": .string \"" << escaped << "\"\n";
+        out << entry.first << ": .string \"" << escapeString(entry.second) << "\"\n";
     }
+
+    // Código
     out << ".text\n";
     out << " .globl main\n";
-    program->accept(this);
+    program->func->accept(this);
+
+    // Stack marker
     out << ".section .note.GNU-stack,\"\",@progbits\n";
 }
 
@@ -63,8 +80,7 @@ void GenCode::visit(VarDec* stm) {
         if (var->iv && var->iv->value) {
             auto strLiteral = dynamic_cast<StringLiteral*>(var->iv->value);
             if (strLiteral) {
-                std::string label = "str_" + std::to_string(stringLabelCounter++);
-                stringLiterals[label] = strLiteral->value;
+                std::string label = registrarStringLiteral(strLiteral->value);
                 memoria[var->id] = offset;
                 offset -= 8;
                 out << "    subq $8, %rsp\n";
@@ -125,14 +141,14 @@ void GenCode::visit(AssignStatement* stm) {
 }
 
 void GenCode::visit(PrintStatement* stm) {
-    for (size_t i = 0; i < stm->args.size(); ++i) {
-        if (auto strLit = dynamic_cast<StringLiteral*>(stm->args[i])) {
-            std::string label = "str_" + std::to_string(stringLabelCounter++);
-            stringLiterals[label] = strLit->value;
+    for (auto arg : stm->args) {
+        auto strLit = dynamic_cast<StringLiteral*>(arg);
+        if (strLit) {
+            string label = registrarStringLiteral(strLit->value);
             out << "    leaq " << label << "(%rip), %rdi\n";
             out << "    call puts@PLT\n";
         } else {
-            stm->args[i]->accept(this);
+            arg->accept(this);
             out <<
                 "    movq %rax, %rsi\n"
                 "    leaq print_fmt(%rip), %rdi\n"
@@ -230,12 +246,10 @@ void GenCode::visit(FunDecList *fdl) {
 // Expresiones
 
 ImpValue GenCode::visit(StringLiteral *exp) {
-    std::string label = "str_" + std::to_string(stringLabelCounter++);
-    stringLiterals[label] = exp->value;
+    string label = registrarStringLiteral(exp->value);
     out << "    leaq " << label << "(%rip), %rax\n";
     return ImpValue();
 }
-
 ImpValue GenCode::visit(BoolExp *exp) {
     out << "    movq $" << (exp->value ? 1 : 0) << ", %rax\n";
     return ImpValue();

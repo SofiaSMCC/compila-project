@@ -12,8 +12,12 @@ private:
     unordered_map<string, int> tamaniosArray; // total elementos
     unordered_map<string, vector<int>> dimsArray;// dimensiones
     // para strings
+    std::map<std::string, std::string> stringLiterals;      // label → contenido
+    std::map<std::string, std::string> literalToLabel;      // contenido → label
     int stringLabelCounter = 0;
-    map<std::string, std::string> stringLiterals;
+
+    std::string registrarStringLiteral(const std::string& val);
+    std::string escapeString(const std::string& raw);
     int offset = -8;
     int labelcont = 0;
     bool entornoFuncion = false;
