@@ -13,6 +13,7 @@ private:
     // arrays
     unordered_map<string, int> tamaniosArray;     // total elementos
     unordered_map<string, vector<int>> dimsArray; // dimensiones
+    unordered_map<string, bool> isArray;
 
     // strings
     vector<string> stringLiterals;
@@ -24,6 +25,7 @@ private:
     int offset = -8;
     int labelcont = 0;
     bool entornoFuncion = false;
+    int numeroParametros = 0;
     string nombreFuncion;
 
 public:

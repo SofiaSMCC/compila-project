@@ -1,11 +1,12 @@
-#include <stdio.h>
+#include<stdio.h>
 
-int suma(int x, int y) {
-    return x + y;
+int combina(int a, int b, int c) {
+     int x = (a + b);
+     int y = (x + c);
+     return (y * 2);
 }
 
 int main() {
-    int resultado = suma(3, 4);
-    printf("%d\n", resultado);
-    return 0;
+  printf("%d\n", combina(1, 2, 3));
+  return 0;
 }

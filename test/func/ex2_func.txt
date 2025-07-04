@@ -1,12 +1,12 @@
 #include <stdio.h>
 
-int combina(int a, int b, int c) {
-    int x = a + b;
-    int y = x + c;
-    return y * 2;
+void imprime_suma(int a, int b) {
+    int s = a + b;
+    printf("Suma: %d\n", s);
 }
+
 int main() {
-    printf("%d\n", combina(1, 2, 3));
-    printf("%d\n", combina(5, 1, 2));
+    imprime_suma(3, 4);
+    imprime_suma(10, 20);
     return 0;
 }
