@@ -23,6 +23,7 @@ void GenCode::popScope() {
         }
     }
 }
+
 // declara una nueva variable local y
 // evita declarar dos veces la misma variable
 void GenCode::declareVariable(const string& name, int size) {
@@ -151,6 +152,7 @@ void GenCode::visit(AssignStatement* stm) {
         out << "    movq %rax, " << memoria[stm->lvalue->id] << "(%rbp)\n";
     }
 }
+
 void GenCode::visit(PrintStatement* stm) {
     for (size_t i = 0; i < stm->args.size(); ++i) {
         stm->args[i]->accept(this);  // Resultado en %rax

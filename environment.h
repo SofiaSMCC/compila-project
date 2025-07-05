@@ -75,6 +75,7 @@ public:
         levels.back()[var].second = value;
         type_levels.back()[var] = type;
     }
+
     // Añadir una variable sin valor inicial
     void add_var(string var, string type) {
         if(type=="int" or type=="bool") {

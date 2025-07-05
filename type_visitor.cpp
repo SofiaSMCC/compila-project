@@ -442,8 +442,14 @@ ImpValue TypeVisitor::visit(InitValue* iv) {
 void TypeVisitor::visit(Var* var) {
     cout << "VAR" << endl;
     cout << "miau" << endl;
-    cout<<var->id;
-    cout<<"slo "<<var->iv->value;
+    cout << var->id;
+
+    if (var->iv && var->iv->value) {
+        cout << "slo " << var->iv->value;
+    } else {
+        cout << "No initialization value :(";
+    }
+
     cout << "miau" << endl;
 }
 
