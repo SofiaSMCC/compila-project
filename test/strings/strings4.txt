@@ -3,6 +3,5 @@ int main() {
    char ciudad[] = "Lima";
    printf("%s %s", ciudad,"peru");
 
-
    return 0;
 }

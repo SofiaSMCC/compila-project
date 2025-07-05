@@ -1,12 +1,12 @@
 #include <stdio.h>
 
-void imprime_suma(int a, int b) {
+void imprimesuma(int a, int b) {
     int s = a + b;
     printf("Suma: %d\n", s);
 }
 
 int main() {
-    imprime_suma(3, 4);
-    imprime_suma(10, 20);
+    imprimesuma(3, 4);
+    imprimesuma(10, 20);
     return 0;
 }

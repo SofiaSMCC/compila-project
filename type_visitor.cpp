@@ -2,6 +2,8 @@
 #define TYPE_VISITOR_H
 #include "type_visitor.h"
 string tiport;
+
+
 bool InitValueType(InitValue* iv, const std::string& expectedType, TypeVisitor* visitor) {
     if (iv == nullptr) {
         return true; // no initialization is valid
@@ -19,6 +21,8 @@ bool InitValueType(InitValue* iv, const std::string& expectedType, TypeVisitor* 
     }
     return false;
 }
+
+
 ///////////////////////////////////////////////////////////////////////////////////
 
 //0 = undefined

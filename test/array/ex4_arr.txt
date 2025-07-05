@@ -1,18 +1,18 @@
 #include <stdio.h>
 
 int main() {
-    bool bool_arr[6] = {true, false, true, false, true, true};
+    bool boolarr[6] = {true, false, true, false, true, true};
 
     for (int i = 0; i < 6; i++) {
-        printf("%d\n", bool_arr[i]);
+        printf("%d\n", boolarr[i]);
     }
 
-    bool_arr[1] = true;
-    bool_arr[3] = true;
-    bool_arr[5] = false;
+    boolarr[1] = true;
+    boolarr[3] = true;
+    boolarr[5] = false;
 
     for (int i = 0; i < 6; i++) {
-        printf("%d\n", bool_arr[i]);
+        printf("%d\n", boolarr[i]);
     }
 
     return 0;

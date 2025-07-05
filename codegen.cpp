@@ -45,8 +45,9 @@ void GenCode::popScope() {
 }
 // declara una nueva variable local y
 // evita declarar dos veces la misma variable
+
 void GenCode::declareVariable(const string& name, int size) {
-    if (!scopeStack.empty() && scopeStack.top().count(name)) return; // No declarar dos veces
+    if (!scopeStack.empty() && scopeStack.top().count(name)) return;
     memoria[name] = offset;
     isArray[name] = (size > 1);
     offset -= size * 8;
