@@ -1,6 +1,5 @@
 #ifndef COMPILA_PROJECT_CODEGEN_HH
 #define COMPILA_PROJECT_CODEGEN_HH
-#include <eval_visitor.h>
 #include "visitor.h"
 #include "stack"
 #include <map>
@@ -8,7 +7,6 @@ using namespace std;
 
 class GenCode : public Visitor {
 private:
-    Environment env;
     ostream &out;
     unordered_map<string, int> memoria;
 
