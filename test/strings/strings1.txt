@@ -1,0 +1,6 @@
+#include<stdio.h>
+int main() {
+   char saludo[] = "hola";
+   printf("%s\n", saludo);
+   return 0;
+}

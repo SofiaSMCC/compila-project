@@ -64,9 +64,7 @@ bool GenCode::isVariableInCurrentScope(const string& name) {
 void GenCode::generar(Program* program) {
     primeraPasada = true;
     string format;
-   // env.add_level();
     program->accept(this);
-   // env.remove_level();
 
     out << ".data\n";
     out << "print_fmt: .string \"%d\\n\"\n";
@@ -77,9 +75,7 @@ void GenCode::generar(Program* program) {
     out << ".text\n";
     out << ".globl main\n";
     primeraPasada = false;
-  //  env.add_level();
     program->accept(this);
-    //env.remove_level();
     out << ".section .note.GNU-stack,\"\",@progbits\n";
 }
 
