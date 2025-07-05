@@ -74,16 +74,13 @@ int main(int argc, const char* argv[]) {
         }
         cout << "Generando codigo ensamblador en " << outputFilename << endl;
 
-        cout << "miau" << endl;
         GenCode codigo(outfile);
-        cout << "miau" << endl;
 
         if (!program) {
             cout << "Error: el programa es nullptr" << endl;
             return 1;
 }
-        codigo.generar(program); //ERROR AQUI
-        cout << "miau" << endl;
+        codigo.generar(program);
         outfile.close();
         delete program;
     } catch (const exception& e) {

@@ -343,9 +343,13 @@ void PrintVisitor::visit(VarDecList* stm) {
 void PrintVisitor::visit(Var* stm) {
     cout << stm->id;
     for (auto d : stm->dimList) {
-        cout << "[";
-        d->accept(this);
-        cout << "]";
+        if (d) {
+            cout << "[";
+            d->accept(this);
+            cout << "]";
+        } else {
+            cout << "[]";
+        }
     }
     if (stm->iv) {
         cout << " = ";

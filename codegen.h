@@ -1,12 +1,14 @@
 #ifndef COMPILA_PROJECT_CODEGEN_HH
 #define COMPILA_PROJECT_CODEGEN_HH
-
+#include <eval_visitor.h>
 #include "visitor.h"
 #include "stack"
+#include <map>
 using namespace std;
 
 class GenCode : public Visitor {
 private:
+    Environment env;
     ostream &out;
     unordered_map<string, int> memoria;
 
@@ -16,12 +18,15 @@ private:
     unordered_map<string, bool> isArray;
 
     // strings
-    vector<string> stringLiterals;
-
+    map<string, string> stringLiterals;      // label → contenido
+    map<string, string> literalToLabel;      // contenido → label
+    int stringLabelCounter = 0;
+    bool primeraPasada = true;
     // manejar memoria
     stack<unordered_map<string, int>> scopeStack;
     stack<int> offsetStack;
-
+    string registrarStringLiteral(const std::string& val);
+    string escapeString(const std::string& raw);
     int offset = -8;
     int labelcont = 0;
     bool entornoFuncion = false;
@@ -30,6 +35,7 @@ private:
 
 public:
     GenCode(ostream& out) : out(out) {}
+    string emitStringLiteral(const std::string& str);
     void generar(Program* program);
     void pushScope();
     void popScope();

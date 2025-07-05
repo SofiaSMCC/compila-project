@@ -114,10 +114,10 @@ class PrintStatement : public Stm {
 public:
     string format;
     Exp* e;
-    vector<Exp*> args;  // Añade este miembro
+    vector<Exp*> args;
 
     PrintStatement(string format, Exp* e);
-    PrintStatement(string format, vector<Exp*> args);  // Actualizar constructor
+    PrintStatement(string format, vector<Exp*> args);
 
     
     int accept(Visitor* visitor);

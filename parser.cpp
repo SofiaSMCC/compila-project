@@ -223,22 +223,25 @@ Var* Parser::ParseVar() {
 
     list<NumberExp*> dl;
     while(match(Token::CI)) {
-        if(!match(Token::NUM)) {
-            cout << "Error: se esperaba un número después del corchete izquierdo" << endl;
-            exit(1);
+        if(match(Token::NUM)) {
+            int n = stoi(previous->text);
+            NumberExp* ne = new NumberExp(n);
+            dl.push_back(ne);
+            if(!match(Token::CD)) {
+                cout << "Error: se esperaba un ']' después de la expresión de índice." << endl;
+                exit(1);
+            }
+        }else if (match(Token::CD)) {
+            dl.push_back(nullptr);
         }
-        int n = stoi(previous->text);
-        NumberExp* ne = new NumberExp(n);
-
-        if(!match(Token::CD)) {
-            cout << "Error: se esperaba un ']' después de la expresión de índice." << endl;
-            exit(1);
-        }
-        dl.push_back(ne);
     }
     InitValue* iv = nullptr;
     if (match(Token::ASSIGN)) {
         iv = ParseInitValue();
+    }
+    if(!dl.empty() && dl.back() == nullptr && iv == nullptr) {
+        cout<<"Se debe dar un valor inicial a "<<id <<endl;
+        exit(1);
     }
     return new Var(id, dl, iv);
 }
@@ -541,7 +544,7 @@ Stm* Parser::ParseStatement(){
         s = new DoWhileStatement(e, b);
     }
     else if (match(Token::RETURN)){
-        if(tipo_rt=="int" or tipo_rt=="bool" or tipo_rt=="string") {
+        if(tipo_rt=="int" or tipo_rt=="bool" or tipo_rt=="char") {
             if(current->text==";") {
                 cout << "Error: se esperaba un valor de retorno en función de tipo " << tipo_rt << endl;
                 exit(1);

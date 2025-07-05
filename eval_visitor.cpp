@@ -33,7 +33,7 @@ void declara_array_eval(
                 env.add_var(nombre, valores[valor_idx++].int_value, tipo);
             else if (tipo == "bool")
                 env.add_var(nombre, valores[valor_idx++].bool_value ? 1 : 0, tipo);
-            else if (tipo == "string")
+            else if (tipo == "char")
                 env.add_var(nombre, valores[valor_idx++].string_value, tipo);
         } else {
             env.add_var(nombre, tipo);
@@ -159,12 +159,12 @@ ImpValue EVALVisitor::visit(NumberExp *exp) {
 
 ImpValue EVALVisitor::visit(BoolExp *exp) {
     bool a = exp->value;
-    return ImpValue("bool", 0, a, "");
+    return ImpValue("char", 0, a, "");
 }
 
 ImpValue EVALVisitor::visit(StringLiteral *exp) {
     string a = exp->value;
-    return ImpValue("string", 0, false, a);
+    return ImpValue("char", 0, false, a);
 }
 
 ImpValue EVALVisitor::visit(IdentifierExp *exp) {
@@ -178,7 +178,7 @@ ImpValue EVALVisitor::visit(IdentifierExp *exp) {
         bool v = env.lookup(exp->name).first;
         return ImpValue(t, 0, v, "");
     }
-    else if (t == "string") {
+    else if (t == "char") {
         string s = env.lookup(exp->name).second;
         return ImpValue(t, 0, false, s);
     }
@@ -196,7 +196,7 @@ ImpValue EVALVisitor::visit(LValue *exp) {
         } else if (t == "bool") {
             bool v = env.lookup(exp->id).first;
             return ImpValue(t, 0, v, "");
-        } else if (t == "string") {
+        } else if (t == "char") {
             string s = env.lookup(exp->id).second;
             return ImpValue(t, 0, false, s);
         }
@@ -216,7 +216,7 @@ ImpValue EVALVisitor::visit(LValue *exp) {
         } else if (t == "bool") {
             bool v = env.lookup(nombre).first;
             return ImpValue(t, 0, v, "");
-        } else if (t == "string") {
+        } else if (t == "char") {
             string s = env.lookup(nombre).second;
             return ImpValue(t, 0, false, s);
         }
@@ -254,8 +254,8 @@ ImpValue EVALVisitor::visit(FCallExp *exp) {
             env.add_var(pname, args[i].int_value, "int");
         else if (ptype == "bool")
             env.add_var(pname, args[i].bool_value ? 1 : 0, "bool");
-        else if (ptype == "string")
-            env.add_var(pname, args[i].string_value, "string");
+        else if (ptype == "char")
+            env.add_var(pname, args[i].string_value, "char");
     }
 
     this->return_encountered = false;
@@ -284,7 +284,7 @@ ImpValue EVALVisitor::visit(ArrayAccessExp *exp) {
     } else if (t == "bool") {
         bool v = env.lookup(nombre).first;
         return ImpValue(t, 0, v, "");
-    } else if (t == "string") {
+    } else if (t == "char") {
         string s = env.lookup(nombre).second;
         return ImpValue(t, 0, false, s);
     }
@@ -321,7 +321,7 @@ void EVALVisitor::visit(AssignStatement *stm) {
         env.update(var_name, val.bool_value ? 1 : 0);
     } else if (t == "int") {
         env.update(var_name, val.int_value);
-    } else if (t == "string") {
+    } else if (t == "char") {
         env.update(var_name, val.string_value);
     }
 }
@@ -399,7 +399,7 @@ void EVALVisitor::visit(PrintStatement *stm) {
         ImpValue arg = argExp->accept(this);
 
         if (stm->format.find("%s") != string::npos) {
-            if (arg.type == "string") {
+            if (arg.type == "char") {
                 cout << arg.string_value;
             } else if (arg.type == "bool") {
                 cout << (arg.bool_value ? "true" : "false");
@@ -459,11 +459,23 @@ void EVALVisitor::visit(Body *b) {
 
 void EVALVisitor::visit(VarDec *stm) {
     for (auto i : stm->vars) {
+        if (!i->dimList.empty() && i->dimList.back() == nullptr && stm->type == "char" && i->iv && !i->iv->isList) {
+            StringLiteral* str_lit = dynamic_cast<StringLiteral*>(i->iv->value);
+            if (!str_lit) {
+                cout << "Error: se esperaba un literal string en la inicialización de char[]\n";
+                exit(1);
+            }
+            env.add_var(i->id, str_lit->value, "char");
+            continue;
+        }
         // Si es array multidimensional
         if (!i->dimList.empty()) {
             // Calcula las dimensiones
             std::vector<int> dims;
             for (auto nexp : i->dimList) {
+                if(nexp == nullptr) { // Ya manejado arriba el caso char x[] =
+                    continue;
+                }
                 dims.push_back(nexp->value);
             }
             std::vector<ImpValue> valores;
@@ -481,7 +493,7 @@ void EVALVisitor::visit(VarDec *stm) {
                 env.add_var(i->id, val.int_value, stm->type);
             } else if (stm->type == "bool") {
                 env.add_var(i->id, val.bool_value ? 1 : 0, stm->type);
-            } else if (stm->type == "string") {
+            } else if (stm->type == "char") {
                 env.add_var(i->id, val.string_value, stm->type);
             }
         } else {

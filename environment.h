@@ -9,7 +9,7 @@
 
 using namespace std;
 struct VarDeclaration {
-    string type;  // Tipo (ej. "int", "bool", "string")
+    string type;  // Tipo (ej. "int", "bool", "char")
     vector<string> vars;  // Variables declaradas de este tipo
 
     // Busca el tipo de una variable en esta declaración
@@ -80,7 +80,7 @@ public:
         if(type=="int" or type=="bool") {
             levels.back()[var].first = 0;
         } // Valor por defecto
-        else if(type=="string")
+        else if(type=="char")
             levels.back()[var].second = "";
         type_levels.back()[var] = type;
     }
@@ -158,7 +158,7 @@ public:
                         cout << entry.second.first;
                     } else if (tipo == "bool") {
                         cout << (entry.second.first ? "true" : "false");
-                    } else if (tipo == "string") {
+                    } else if (tipo == "char") {
                         cout << "\"" << entry.second.second << "\"";
                     }
                     cout << endl;
